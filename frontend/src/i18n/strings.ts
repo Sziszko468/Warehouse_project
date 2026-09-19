@@ -1,0 +1,28 @@
+// Shared Hungarian strings reused across many components. Page- and
+// feature-specific copy stays inline in the component that owns it.
+export const t = {
+  save: "Mentés",
+  cancel: "Mégse",
+  delete: "Törlés",
+  edit: "Szerkesztés",
+  create: "Új felvétele",
+  close: "Bezárás",
+  loading: "Betöltés…",
+  search: "Keresés",
+  actions: "Műveletek",
+  confirmDeleteTitle: "Biztosan törli?",
+  yes: "Igen",
+  no: "Nem",
+  active: "Aktív",
+  inactive: "Inaktív",
+  showInactive: "Inaktívak mutatása",
+  name: "Név",
+  description: "Leírás",
+  noResults: "Nincs megjeleníthető adat.",
+  page: "oldal",
+  of: "/",
+  previous: "Előző",
+  next: "Következő",
+  requiredField: "Kötelező mező",
+  genericError: "Váratlan hiba történt. Próbálja újra.",
+};
