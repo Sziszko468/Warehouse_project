@@ -1,7 +1,9 @@
 from sqlalchemy import CheckConstraint, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+from app.models.product import Product
+from app.models.warehouse import Warehouse
 
 
 class Stock(Base, TimestampMixin):
@@ -19,3 +21,6 @@ class Stock(Base, TimestampMixin):
         ForeignKey("warehouses.id", ondelete="RESTRICT"), index=True, nullable=False
     )
     quantity: Mapped[int] = mapped_column(default=0, nullable=False)
+
+    product: Mapped[Product] = relationship()
+    warehouse: Mapped[Warehouse] = relationship()

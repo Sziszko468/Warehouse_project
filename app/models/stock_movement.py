@@ -2,9 +2,12 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Index, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+from app.models.product import Product
+from app.models.user import User
+from app.models.warehouse import Warehouse
 
 
 class MovementType(str, enum.Enum):
@@ -53,3 +56,8 @@ class StockMovement(Base):
         ForeignKey("users.id", ondelete="RESTRICT"), index=True, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    product: Mapped[Product] = relationship()
+    from_warehouse: Mapped[Warehouse | None] = relationship(foreign_keys=[from_warehouse_id])
+    to_warehouse: Mapped[Warehouse | None] = relationship(foreign_keys=[to_warehouse_id])
+    performed_by: Mapped[User] = relationship()
