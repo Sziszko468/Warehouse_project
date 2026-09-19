@@ -20,9 +20,7 @@ class Product(Base, TimestampMixin):
     category_id: Mapped[int] = mapped_column(
         ForeignKey("categories.id", ondelete="RESTRICT"), index=True, nullable=False
     )
-    supplier_id: Mapped[int | None] = mapped_column(
-        ForeignKey("suppliers.id", ondelete="RESTRICT"), index=True
-    )
+    supplier_id: Mapped[int | None] = mapped_column(ForeignKey("suppliers.id", ondelete="RESTRICT"), index=True)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     min_stock_threshold: Mapped[int] = mapped_column(default=0, nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)

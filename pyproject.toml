@@ -33,3 +33,13 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.ruff]
+line-length = 115
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    "B008",   # Depends()/Query() in argument defaults is the standard FastAPI DI pattern
+    "UP046",  # keep Generic[T] rather than PEP 695 `class Page[T]`, for wider Pydantic compatibility
+]

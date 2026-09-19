@@ -22,5 +22,19 @@ services:
     depends_on:
       - postgres
 
+  api:
+    build: .
+    env_file: .env
+    environment:
+      # overrides the .env value so the container reaches postgres by its service
+      # name rather than localhost (.env's DATABASE_URL is for running the app
+      # directly on the host, e.g. `uv run uvicorn` or `alembic` during development)
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stockflow}:${POSTGRES_PASSWORD:-stockflow}@postgres:5432/${POSTGRES_DB:-stockflow}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   pgdata:

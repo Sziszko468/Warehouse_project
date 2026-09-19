@@ -1,5 +1,5 @@
-import enum
 from datetime import datetime
+from enum import StrEnum
 
 from sqlalchemy import CheckConstraint, DateTime, Enum, ForeignKey, Index, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -10,7 +10,7 @@ from app.models.user import User
 from app.models.warehouse import Warehouse
 
 
-class MovementType(str, enum.Enum):
+class MovementType(StrEnum):
     IN = "in"
     OUT = "out"
     TRANSFER = "transfer"
@@ -41,7 +41,9 @@ class StockMovement(Base):
         ForeignKey("products.id", ondelete="RESTRICT"), index=True, nullable=False
     )
     movement_type: Mapped[MovementType] = mapped_column(
-        Enum(MovementType, native_enum=False, validate_strings=True, values_callable=lambda e: [m.value for m in e]),
+        Enum(
+            MovementType, native_enum=False, validate_strings=True, values_callable=lambda e: [m.value for m in e]
+        ),
         nullable=False,
     )
     quantity: Mapped[int] = mapped_column(nullable=False)

@@ -10,7 +10,9 @@ def get_by_email(db: Session, email: str) -> User | None:
     return db.scalar(select(User).where(User.email == email))
 
 
-def create_user(db: Session, *, email: str, password: str, full_name: str, role: UserRole = UserRole.STAFF) -> User:
+def create_user(
+    db: Session, *, email: str, password: str, full_name: str, role: UserRole = UserRole.STAFF
+) -> User:
     user = User(email=email, hashed_password=hash_password(password), full_name=full_name, role=role)
     db.add(user)
     db.flush()
