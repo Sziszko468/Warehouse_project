@@ -21,6 +21,10 @@ wheels/
 .coverage
 htmlcov/
 
+# local dev-only SQLite DB and server logs (Docker/Postgres is the real target)
+dev.db
+*.log
+
 # OS
 .DS_Store
 Thumbs.db

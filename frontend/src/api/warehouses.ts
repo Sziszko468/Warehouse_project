@@ -13,7 +13,7 @@ export interface WarehouseInput {
 }
 
 export function listWarehouses(params: WarehouseListParams = {}): Promise<Page<Warehouse>> {
-  return apiRequest<Page<Warehouse>>("/warehouses", { query: params });
+  return apiRequest<Page<Warehouse>>("/warehouses", { query: { ...params } });
 }
 
 export function createWarehouse(input: WarehouseInput): Promise<Warehouse> {

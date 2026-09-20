@@ -9,7 +9,7 @@ export interface UserListParams {
 }
 
 export function listUsers(params: UserListParams = {}): Promise<Page<User>> {
-  return apiRequest<Page<User>>("/users", { query: params });
+  return apiRequest<Page<User>>("/users", { query: { ...params } });
 }
 
 export interface UserUpdateInput {

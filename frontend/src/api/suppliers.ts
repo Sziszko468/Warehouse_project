@@ -16,7 +16,7 @@ export interface SupplierInput {
 }
 
 export function listSuppliers(params: SupplierListParams = {}): Promise<Page<Supplier>> {
-  return apiRequest<Page<Supplier>>("/suppliers", { query: params });
+  return apiRequest<Page<Supplier>>("/suppliers", { query: { ...params } });
 }
 
 export function createSupplier(input: SupplierInput): Promise<Supplier> {

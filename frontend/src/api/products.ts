@@ -21,7 +21,7 @@ export interface ProductInput {
 }
 
 export function listProducts(params: ProductListParams = {}): Promise<Page<Product>> {
-  return apiRequest<Page<Product>>("/products", { query: params });
+  return apiRequest<Page<Product>>("/products", { query: { ...params } });
 }
 
 export function createProduct(input: ProductInput): Promise<Product> {

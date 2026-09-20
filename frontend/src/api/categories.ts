@@ -13,7 +13,7 @@ export interface CategoryInput {
 }
 
 export function listCategories(params: CategoryListParams = {}): Promise<Page<Category>> {
-  return apiRequest<Page<Category>>("/categories", { query: params });
+  return apiRequest<Page<Category>>("/categories", { query: { ...params } });
 }
 
 export function createCategory(input: CategoryInput): Promise<Category> {

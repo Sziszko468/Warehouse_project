@@ -726,6 +726,36 @@ p {
   margin-top: 0.3rem;
 }
 
+/* ---------- segmented control ---------- */
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--spf-brass-dark);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 1.3rem;
+}
+
+.segmented-btn {
+  font-family: var(--spf-font-display);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 1.2rem;
+  background: var(--spf-bg-elevated);
+  color: var(--spf-text-dim);
+  border: none;
+  border-right: 1px solid var(--spf-brass-dark);
+  cursor: pointer;
+}
+.segmented-btn:last-child {
+  border-right: none;
+}
+.segmented-btn.active {
+  background: linear-gradient(180deg, var(--spf-brass-bright), var(--spf-brass) 60%, var(--spf-brass-dark));
+  color: #241a0d;
+}
+
 /* ---------- pagination ---------- */
 
 .pagination {

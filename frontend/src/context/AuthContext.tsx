@@ -18,7 +18,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // No stored token means there's nothing to restore, so start "not loading" directly rather
+  // than flipping true -> false on mount (avoids an extra synchronous render from the effect).
+  const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_STORAGE_KEY)));
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -29,7 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (!stored) {
-      setIsLoading(false);
       return;
     }
     setAuthToken(stored);

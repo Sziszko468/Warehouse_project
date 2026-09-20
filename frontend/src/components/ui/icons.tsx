@@ -9,6 +9,12 @@ type IconProps = SVGProps<SVGSVGElement>;
 
 const base = {
   viewBox: "0 0 24 24",
+  // 1em default so every icon scales with its surrounding text unless a specific
+  // CSS rule (.sidebar-link svg, .btn svg, etc.) or inline style overrides it —
+  // without this, a bare <Icon /> dropped outside those contexts renders at the
+  // SVG's unconstrained intrinsic size (huge) instead of a sensible glyph size.
+  width: "1em",
+  height: "1em",
   fill: "none",
   stroke: "currentColor",
   strokeWidth: 1.8,

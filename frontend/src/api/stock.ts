@@ -9,7 +9,7 @@ export interface StockListParams {
 }
 
 export function listStock(params: StockListParams = {}): Promise<Page<Stock>> {
-  return apiRequest<Page<Stock>>("/stock", { query: params });
+  return apiRequest<Page<Stock>>("/stock", { query: { ...params } });
 }
 
 export interface LowStockListParams {
@@ -19,7 +19,7 @@ export interface LowStockListParams {
 }
 
 export function listLowStock(params: LowStockListParams = {}): Promise<Page<LowStock>> {
-  return apiRequest<Page<LowStock>>("/stock/low-stock", { query: params });
+  return apiRequest<Page<LowStock>>("/stock/low-stock", { query: { ...params } });
 }
 
 export interface MovementListParams {
@@ -34,7 +34,7 @@ export interface MovementListParams {
 }
 
 export function listMovements(params: MovementListParams = {}): Promise<Page<StockMovement>> {
-  return apiRequest<Page<StockMovement>>("/stock/movements", { query: params });
+  return apiRequest<Page<StockMovement>>("/stock/movements", { query: { ...params } });
 }
 
 export interface StockInInput {
