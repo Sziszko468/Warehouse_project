@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.exceptions import InsufficientStockError, InvalidStockOperationError, NotFoundError
+from app.messages import Messages
 from app.models.product import Product
 from app.models.stock import Stock
 from app.models.stock_movement import MovementType, StockMovement
@@ -10,13 +11,17 @@ from app.models.warehouse import Warehouse
 
 
 def _require_product(db: Session, product_id: int) -> None:
-    if db.get(Product, product_id) is None:
-        raise NotFoundError("Product not found")
+    # Soft-deleted counts as not-found here too (see products.py's _validate_references) - a
+    # discontinued product shouldn't silently keep accruing new stock movements.
+    product = db.get(Product, product_id)
+    if product is None or not product.is_active:
+        raise NotFoundError(Messages.PRODUCT_NOT_FOUND)
 
 
 def _require_warehouse(db: Session, warehouse_id: int) -> None:
-    if db.get(Warehouse, warehouse_id) is None:
-        raise NotFoundError("Warehouse not found")
+    warehouse = db.get(Warehouse, warehouse_id)
+    if warehouse is None or not warehouse.is_active:
+        raise NotFoundError(Messages.WAREHOUSE_NOT_FOUND)
 
 
 def _get_stock_locked(db: Session, product_id: int, warehouse_id: int) -> Stock | None:
@@ -75,7 +80,7 @@ def stock_out(
     stock = _get_stock_locked(db, product_id, warehouse_id)
     available = stock.quantity if stock is not None else 0
     if available < quantity:
-        raise InsufficientStockError(f"Insufficient stock: requested {quantity}, available {available}")
+        raise InsufficientStockError(Messages.insufficient_stock(quantity, available))
     stock.quantity -= quantity
 
     movement = StockMovement(
@@ -103,7 +108,7 @@ def transfer(
     performed_by_id: int,
 ) -> StockMovement:
     if from_warehouse_id == to_warehouse_id:
-        raise InvalidStockOperationError("Cannot transfer stock to the same warehouse")
+        raise InvalidStockOperationError(Messages.SELF_TRANSFER_REJECTED)
 
     _require_product(db, product_id)
     _require_warehouse(db, from_warehouse_id)
@@ -121,7 +126,7 @@ def transfer(
     to_stock = locked[to_warehouse_id]
 
     if from_stock.quantity < quantity:
-        raise InsufficientStockError(f"Insufficient stock: requested {quantity}, available {from_stock.quantity}")
+        raise InsufficientStockError(Messages.insufficient_stock(quantity, from_stock.quantity))
 
     from_stock.quantity -= quantity
     to_stock.quantity += quantity

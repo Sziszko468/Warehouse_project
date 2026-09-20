@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.messages import Messages
 from app.models.user import User, UserRole
 from app.security import decode_access_token
 
@@ -12,7 +13,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail=Messages.COULD_NOT_VALIDATE_CREDENTIALS,
         headers={"WWW-Authenticate": "Bearer"},
     )
     user_id = decode_access_token(token)
@@ -28,7 +29,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=Messages.ADMIN_PRIVILEGES_REQUIRED)
     return current_user
 
 

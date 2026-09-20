@@ -2,9 +2,11 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
+from app.messages import Messages
+
 
 class InsufficientStockError(Exception):
-    def __init__(self, message: str = "Insufficient stock for this operation"):
+    def __init__(self, message: str = Messages.INSUFFICIENT_STOCK_DEFAULT):
         self.message = message
 
 
@@ -14,12 +16,12 @@ class InvalidStockOperationError(Exception):
 
 
 class NotFoundError(Exception):
-    def __init__(self, message: str = "Resource not found"):
+    def __init__(self, message: str = Messages.RESOURCE_NOT_FOUND):
         self.message = message
 
 
 class LastAdminError(Exception):
-    def __init__(self, message: str = "Cannot demote or deactivate the last active admin"):
+    def __init__(self, message: str = Messages.LAST_ADMIN_GUARD):
         self.message = message
 
 
@@ -43,5 +45,5 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(IntegrityError)
     async def handle_integrity_error(request: Request, exc: IntegrityError) -> JSONResponse:
         return JSONResponse(
-            status_code=status.HTTP_409_CONFLICT, content={"detail": "Request conflicts with existing data"}
+            status_code=status.HTTP_409_CONFLICT, content={"detail": Messages.CONFLICTS_WITH_EXISTING_DATA}
         )

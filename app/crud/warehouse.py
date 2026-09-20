@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.crud import common
 from app.crud.common import paginate
 from app.models.warehouse import Warehouse
 from app.schemas.warehouse import WarehouseCreate, WarehouseUpdate
@@ -15,24 +16,15 @@ def get_by_name(db: Session, name: str) -> Warehouse | None:
 
 
 def create(db: Session, payload: WarehouseCreate) -> Warehouse:
-    warehouse = Warehouse(**payload.model_dump())
-    db.add(warehouse)
-    db.flush()
-    db.refresh(warehouse)
-    return warehouse
+    return common.create(db, Warehouse, payload)
 
 
 def update(db: Session, warehouse: Warehouse, payload: WarehouseUpdate) -> Warehouse:
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(warehouse, field, value)
-    db.flush()
-    db.refresh(warehouse)
-    return warehouse
+    return common.update(db, warehouse, payload)
 
 
 def soft_delete(db: Session, warehouse: Warehouse) -> None:
-    warehouse.is_active = False
-    db.flush()
+    common.soft_delete(db, warehouse)
 
 
 def list_warehouses(

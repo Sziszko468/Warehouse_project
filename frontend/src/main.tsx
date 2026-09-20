@@ -12,6 +12,12 @@ const queryClient = new QueryClient({
     queries: {
       retry: false,
       refetchOnWindowFocus: false,
+      // Without this, staleTime defaults to 0, so e.g. the products/warehouses "for-select"
+      // dropdown data refetches on every single mount - navigating Stock -> Movements -> Stock
+      // re-requests the same rarely-changing data each time. Mutations still see fresh data
+      // immediately, since every write path explicitly invalidateQueries() the keys it affects
+      // regardless of staleTime.
+      staleTime: 30_000,
     },
   },
 });

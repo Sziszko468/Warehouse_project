@@ -27,6 +27,18 @@ def count_active_admins(db: Session, *, exclude_user_id: int | None = None) -> i
     return db.scalar(stmt) or 0
 
 
+def lock_active_admins(db: Session) -> list[User]:
+    """Row-locks every currently active admin for the rest of this transaction.
+
+    Used before the last-admin guard check: without this, two concurrent requests demoting or
+    deactivating two *different* admins could each read "1 other active admin" and both pass,
+    leaving zero. Postgres doesn't allow `FOR UPDATE` with an aggregate, so this locks the actual
+    rows and the caller counts them in Python instead of using count_active_admins() here.
+    """
+    stmt = select(User).where(User.role == UserRole.ADMIN, User.is_active.is_(True)).with_for_update()
+    return list(db.scalars(stmt).all())
+
+
 def list_users(
     db: Session, *, role: UserRole | None = None, is_active: bool | None = None, limit: int = 50, offset: int = 0
 ) -> tuple[list[User], int]:

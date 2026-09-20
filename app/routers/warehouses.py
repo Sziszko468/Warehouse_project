@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 from app.crud import warehouse as crud_warehouse
 from app.database import get_db
 from app.dependencies import PaginationParams, get_current_user, require_admin
+from app.messages import Messages
 from app.models.user import User
 from app.models.warehouse import Warehouse
+from app.routers.helpers import get_or_404
 from app.schemas.common import Page
 from app.schemas.warehouse import WarehouseCreate, WarehouseRead, WarehouseUpdate
 
@@ -29,10 +31,7 @@ def list_warehouses(
 def get_warehouse(
     warehouse_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)
 ) -> Warehouse:
-    warehouse = crud_warehouse.get(db, warehouse_id)
-    if warehouse is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Warehouse not found")
-    return warehouse
+    return get_or_404(crud_warehouse.get, db, warehouse_id, Messages.WAREHOUSE_NOT_FOUND)
 
 
 @router.post("", response_model=WarehouseRead, status_code=status.HTTP_201_CREATED)
@@ -40,7 +39,7 @@ def create_warehouse(
     payload: WarehouseCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)
 ) -> Warehouse:
     if crud_warehouse.get_by_name(db, payload.name) is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Warehouse name already exists")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=Messages.WAREHOUSE_NAME_EXISTS)
     return crud_warehouse.create(db, payload)
 
 
@@ -48,21 +47,17 @@ def create_warehouse(
 def update_warehouse(
     warehouse_id: int, payload: WarehouseUpdate, db: Session = Depends(get_db), _: User = Depends(require_admin)
 ) -> Warehouse:
-    warehouse = crud_warehouse.get(db, warehouse_id)
-    if warehouse is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Warehouse not found")
+    warehouse = get_or_404(crud_warehouse.get, db, warehouse_id, Messages.WAREHOUSE_NOT_FOUND)
     if (
         payload.name
         and payload.name != warehouse.name
         and crud_warehouse.get_by_name(db, payload.name) is not None
     ):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Warehouse name already exists")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=Messages.WAREHOUSE_NAME_EXISTS)
     return crud_warehouse.update(db, warehouse, payload)
 
 
 @router.delete("/{warehouse_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_warehouse(warehouse_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)) -> None:
-    warehouse = crud_warehouse.get(db, warehouse_id)
-    if warehouse is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Warehouse not found")
+    warehouse = get_or_404(crud_warehouse.get, db, warehouse_id, Messages.WAREHOUSE_NOT_FOUND)
     crud_warehouse.soft_delete(db, warehouse)

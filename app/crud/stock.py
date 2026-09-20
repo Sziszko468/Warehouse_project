@@ -60,7 +60,10 @@ def list_movements(
             joinedload(StockMovement.to_warehouse),
             joinedload(StockMovement.performed_by),
         )
-        .order_by(StockMovement.created_at.desc())
+        # id is the tie-breaker: two movements can land on the same created_at at typical
+        # timestamp precision (e.g. a rapid sequence of calls), and without a deterministic
+        # secondary key their relative order in the result would be undefined.
+        .order_by(StockMovement.created_at.desc(), StockMovement.id.desc())
     )
     if product_id is not None:
         stmt = stmt.where(StockMovement.product_id == product_id)

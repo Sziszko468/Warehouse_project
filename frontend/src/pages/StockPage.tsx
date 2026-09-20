@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import * as productsApi from "../api/products";
 import * as stockApi from "../api/stock";
+import type { StockInInput } from "../api/stock";
 import * as warehousesApi from "../api/warehouses";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
@@ -13,7 +14,7 @@ import { Panel } from "../components/ui/Panel";
 import { useToast } from "../context/ToastContext";
 import { getErrorMessage } from "../lib/errors";
 import { formatDateTime } from "../lib/format";
-import type { Product, Stock, Warehouse } from "../types";
+import type { Product, Stock, StockMovement, Warehouse } from "../types";
 
 const LIMIT = 20;
 
@@ -138,6 +139,46 @@ interface StockOperationPanelProps {
   onError: (err: unknown) => void;
 }
 
+interface WarehouseSelectProps {
+  id: string;
+  label: string;
+  value: number | "";
+  onChange: (value: number | "") => void;
+  warehouses: Warehouse[];
+}
+
+// Shared by all three warehouse pickers below (single warehouse for in/out, from/to for
+// transfer) - previously three separately hand-written, byte-identical <select> blocks.
+function WarehouseSelect({ id, label, value, onChange, warehouses }: WarehouseSelectProps) {
+  return (
+    <Field label={label} htmlFor={id} required>
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value ? Number(event.target.value) : "")}
+        required
+      >
+        <option value="" disabled>
+          Válasszon…
+        </option>
+        {warehouses.map((warehouse) => (
+          <option key={warehouse.id} value={warehouse.id}>
+            {warehouse.name}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}
+
+// stockIn/stockOut take the identical {product_id, warehouse_id, quantity, note} shape, so the
+// "in" and "out" cases collapse into one lookup instead of two near-identical branches; transfer
+// keeps its own branch below since its payload shape (from/to) genuinely differs.
+const SINGLE_WAREHOUSE_OPS: Record<"in" | "out", (input: StockInInput) => Promise<StockMovement>> = {
+  in: stockApi.stockIn,
+  out: stockApi.stockOut,
+};
+
 function StockOperationPanel({ products, warehouses, onSuccess, onError }: StockOperationPanelProps) {
   const [kind, setKind] = useState<OperationKind>("in");
   const [productId, setProductId] = useState<number | "">("");
@@ -160,15 +201,10 @@ function StockOperationPanel({ products, warehouses, onSuccess, onError }: Stock
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!productId) return;
+
     setIsSubmitting(true);
     try {
-      if (kind === "in") {
-        if (!warehouseId) return;
-        await stockApi.stockIn({ product_id: productId, warehouse_id: warehouseId, quantity, note: note || null });
-      } else if (kind === "out") {
-        if (!warehouseId) return;
-        await stockApi.stockOut({ product_id: productId, warehouse_id: warehouseId, quantity, note: note || null });
-      } else {
+      if (kind === "transfer") {
         if (!fromWarehouseId || !toWarehouseId) return;
         await stockApi.stockTransfer({
           product_id: productId,
@@ -177,6 +213,9 @@ function StockOperationPanel({ products, warehouses, onSuccess, onError }: Stock
           quantity,
           note: note || null,
         });
+      } else {
+        if (!warehouseId) return;
+        await SINGLE_WAREHOUSE_OPS[kind]({ product_id: productId, warehouse_id: warehouseId, quantity, note: note || null });
       }
       resetForm();
       onSuccess();
@@ -226,61 +265,13 @@ function StockOperationPanel({ products, warehouses, onSuccess, onError }: Stock
         </Field>
 
         {kind !== "transfer" && (
-          <Field label="Raktár" htmlFor="op-warehouse" required>
-            <select
-              id="op-warehouse"
-              value={warehouseId}
-              onChange={(event) => setWarehouseId(event.target.value ? Number(event.target.value) : "")}
-              required
-            >
-              <option value="" disabled>
-                Válasszon…
-              </option>
-              {warehouses.map((warehouse) => (
-                <option key={warehouse.id} value={warehouse.id}>
-                  {warehouse.name}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <WarehouseSelect id="op-warehouse" label="Raktár" value={warehouseId} onChange={setWarehouseId} warehouses={warehouses} />
         )}
 
         {kind === "transfer" && (
           <div className="form-row">
-            <Field label="Honnan" htmlFor="op-from" required>
-              <select
-                id="op-from"
-                value={fromWarehouseId}
-                onChange={(event) => setFromWarehouseId(event.target.value ? Number(event.target.value) : "")}
-                required
-              >
-                <option value="" disabled>
-                  Válasszon…
-                </option>
-                {warehouses.map((warehouse) => (
-                  <option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Hová" htmlFor="op-to" required>
-              <select
-                id="op-to"
-                value={toWarehouseId}
-                onChange={(event) => setToWarehouseId(event.target.value ? Number(event.target.value) : "")}
-                required
-              >
-                <option value="" disabled>
-                  Válasszon…
-                </option>
-                {warehouses.map((warehouse) => (
-                  <option key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <WarehouseSelect id="op-from" label="Honnan" value={fromWarehouseId} onChange={setFromWarehouseId} warehouses={warehouses} />
+            <WarehouseSelect id="op-to" label="Hová" value={toWarehouseId} onChange={setToWarehouseId} warehouses={warehouses} />
           </div>
         )}
 

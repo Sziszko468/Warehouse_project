@@ -60,6 +60,11 @@ export function ProductsPage() {
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ["products"] });
+    // min_stock_threshold lives on the product but drives the backend's low-stock computation,
+    // so a product edit can change which stock rows count as low without any stock row itself
+    // changing - the low-stock widget/page would otherwise show stale data until it happens to
+    // remount.
+    queryClient.invalidateQueries({ queryKey: ["stock"] });
   }
 
   const columns: Column<Product>[] = [

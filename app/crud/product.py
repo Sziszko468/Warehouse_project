@@ -1,6 +1,7 @@
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
+from app.crud import common
 from app.crud.common import paginate
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductUpdate
@@ -15,24 +16,15 @@ def get_by_sku(db: Session, sku: str) -> Product | None:
 
 
 def create(db: Session, payload: ProductCreate) -> Product:
-    product = Product(**payload.model_dump())
-    db.add(product)
-    db.flush()
-    db.refresh(product)
-    return product
+    return common.create(db, Product, payload)
 
 
 def update(db: Session, product: Product, payload: ProductUpdate) -> Product:
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(product, field, value)
-    db.flush()
-    db.refresh(product)
-    return product
+    return common.update(db, product, payload)
 
 
 def soft_delete(db: Session, product: Product) -> None:
-    product.is_active = False
-    db.flush()
+    common.soft_delete(db, product)
 
 
 def list_products(

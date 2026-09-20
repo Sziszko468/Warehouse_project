@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.crud import common
 from app.crud.common import paginate
 from app.models.supplier import Supplier
 from app.schemas.supplier import SupplierCreate, SupplierUpdate
@@ -11,24 +12,15 @@ def get(db: Session, supplier_id: int) -> Supplier | None:
 
 
 def create(db: Session, payload: SupplierCreate) -> Supplier:
-    supplier = Supplier(**payload.model_dump())
-    db.add(supplier)
-    db.flush()
-    db.refresh(supplier)
-    return supplier
+    return common.create(db, Supplier, payload)
 
 
 def update(db: Session, supplier: Supplier, payload: SupplierUpdate) -> Supplier:
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(supplier, field, value)
-    db.flush()
-    db.refresh(supplier)
-    return supplier
+    return common.update(db, supplier, payload)
 
 
 def soft_delete(db: Session, supplier: Supplier) -> None:
-    supplier.is_active = False
-    db.flush()
+    common.soft_delete(db, supplier)
 
 
 def list_suppliers(

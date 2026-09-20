@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.crud import common
 from app.crud.common import paginate
 from app.models.category import Category
 from app.schemas.category import CategoryCreate, CategoryUpdate
@@ -15,24 +16,15 @@ def get_by_name(db: Session, name: str) -> Category | None:
 
 
 def create(db: Session, payload: CategoryCreate) -> Category:
-    category = Category(**payload.model_dump())
-    db.add(category)
-    db.flush()
-    db.refresh(category)
-    return category
+    return common.create(db, Category, payload)
 
 
 def update(db: Session, category: Category, payload: CategoryUpdate) -> Category:
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(category, field, value)
-    db.flush()
-    db.refresh(category)
-    return category
+    return common.update(db, category, payload)
 
 
 def soft_delete(db: Session, category: Category) -> None:
-    category.is_active = False
-    db.flush()
+    common.soft_delete(db, category)
 
 
 def list_categories(
