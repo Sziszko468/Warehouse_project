@@ -36,5 +36,17 @@ services:
       postgres:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # the browser loads this, so it must be a URL reachable from the host,
+        # not the "api" in-network service name (see frontend/Dockerfile)
+        VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
 volumes:
   pgdata:
