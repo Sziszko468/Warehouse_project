@@ -34,20 +34,25 @@ def get_supplier(supplier_id: int, db: Session = Depends(get_db), _: User = Depe
 
 @router.post("", response_model=SupplierRead, status_code=status.HTTP_201_CREATED)
 def create_supplier(
-    payload: SupplierCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)
+    payload: SupplierCreate, db: Session = Depends(get_db), current_user: User = Depends(require_admin)
 ) -> Supplier:
-    return crud_supplier.create(db, payload)
+    return crud_supplier.create(db, payload, performed_by_id=current_user.id)
 
 
 @router.patch("/{supplier_id}", response_model=SupplierRead)
 def update_supplier(
-    supplier_id: int, payload: SupplierUpdate, db: Session = Depends(get_db), _: User = Depends(require_admin)
+    supplier_id: int,
+    payload: SupplierUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ) -> Supplier:
     supplier = get_or_404(crud_supplier.get, db, supplier_id, Messages.SUPPLIER_NOT_FOUND)
-    return crud_supplier.update(db, supplier, payload)
+    return crud_supplier.update(db, supplier, payload, performed_by_id=current_user.id)
 
 
 @router.delete("/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_supplier(supplier_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)) -> None:
+def delete_supplier(
+    supplier_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_admin)
+) -> None:
     supplier = get_or_404(crud_supplier.get, db, supplier_id, Messages.SUPPLIER_NOT_FOUND)
-    crud_supplier.soft_delete(db, supplier)
+    crud_supplier.soft_delete(db, supplier, performed_by_id=current_user.id)

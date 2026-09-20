@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiRequest, downloadFile } from "./client";
 import type { LowStock, MovementType, Page, Stock, StockMovement } from "../types";
 
 export interface StockListParams {
@@ -10,6 +10,10 @@ export interface StockListParams {
 
 export function listStock(params: StockListParams = {}): Promise<Page<Stock>> {
   return apiRequest<Page<Stock>>("/stock", { query: { ...params } });
+}
+
+export function exportStock(params: StockListParams = {}): Promise<void> {
+  return downloadFile("/stock/export", { ...params });
 }
 
 export interface LowStockListParams {
@@ -35,6 +39,10 @@ export interface MovementListParams {
 
 export function listMovements(params: MovementListParams = {}): Promise<Page<StockMovement>> {
   return apiRequest<Page<StockMovement>>("/stock/movements", { query: { ...params } });
+}
+
+export function exportMovements(params: MovementListParams = {}): Promise<void> {
+  return downloadFile("/stock/movements/export", { ...params });
 }
 
 export interface StockInInput {

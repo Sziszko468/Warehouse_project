@@ -15,16 +15,16 @@ def get_by_name(db: Session, name: str) -> Category | None:
     return db.scalar(select(Category).where(Category.name == name))
 
 
-def create(db: Session, payload: CategoryCreate) -> Category:
-    return common.create(db, Category, payload)
+def create(db: Session, payload: CategoryCreate, *, performed_by_id: int) -> Category:
+    return common.create(db, Category, payload, performed_by_id=performed_by_id)
 
 
-def update(db: Session, category: Category, payload: CategoryUpdate) -> Category:
-    return common.update(db, category, payload)
+def update(db: Session, category: Category, payload: CategoryUpdate, *, performed_by_id: int) -> Category:
+    return common.update(db, category, payload, performed_by_id=performed_by_id)
 
 
-def soft_delete(db: Session, category: Category) -> None:
-    common.soft_delete(db, category)
+def soft_delete(db: Session, category: Category, *, performed_by_id: int) -> None:
+    common.soft_delete(db, category, performed_by_id=performed_by_id)
 
 
 def list_categories(

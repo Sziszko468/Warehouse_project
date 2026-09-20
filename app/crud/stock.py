@@ -9,6 +9,11 @@ from app.models.stock import Stock
 from app.models.stock_movement import MovementType, StockMovement
 
 
+def get_quantity(db: Session, product_id: int, warehouse_id: int) -> int:
+    stock = db.scalar(select(Stock).where(Stock.product_id == product_id, Stock.warehouse_id == warehouse_id))
+    return stock.quantity if stock is not None else 0
+
+
 def list_stock(
     db: Session,
     *,

@@ -8,7 +8,7 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { Button } from "../components/ui/Button";
 import { DataTable, type Column } from "../components/ui/DataTable";
 import { Field } from "../components/ui/Field";
-import { TransferIcon } from "../components/ui/icons";
+import { DownloadIcon, TransferIcon } from "../components/ui/icons";
 import { Pagination } from "../components/ui/Pagination";
 import { Panel } from "../components/ui/Panel";
 import { useToast } from "../context/ToastContext";
@@ -67,6 +67,13 @@ export function StockPage() {
     },
     { key: "warehouse", header: "Raktár", render: (row) => row.warehouse.name },
     { key: "quantity", header: "Mennyiség", numeric: true, render: (row) => row.quantity },
+    {
+      key: "reserved",
+      header: "Foglalt",
+      numeric: true,
+      render: (row) => (row.reserved_quantity > 0 ? row.reserved_quantity : <span className="text-faint">—</span>),
+    },
+    { key: "available", header: "Elérhető", numeric: true, render: (row) => row.available_quantity },
     { key: "updated", header: "Utolsó frissítés", render: (row) => formatDateTime(row.updated_at) },
   ];
 
@@ -87,6 +94,18 @@ export function StockPage() {
         <Panel>
           <div className="panel-header">
             <h3>Jelenlegi készlet</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                stockApi
+                  .exportStock({ product_id: productFilter || undefined, warehouse_id: warehouseFilter || undefined })
+                  .catch((err) => showError(getErrorMessage(err)))
+              }
+            >
+              <DownloadIcon />
+              CSV exportálás
+            </Button>
           </div>
           <div className="filters-bar">
             <Field label="Termék" htmlFor="stock-product-filter">

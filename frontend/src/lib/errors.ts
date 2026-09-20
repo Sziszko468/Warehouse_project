@@ -21,9 +21,29 @@ const EXACT_TRANSLATIONS: Record<string, string> = {
   "Cannot demote or deactivate the last active admin":
     "Az utolsó aktív adminisztrátor jogosultsága nem vonható vissza, és nem tiltható le.",
   "Request conflicts with existing data": "A kérés ütközik egy meglévő adattal.",
+  "Customer not found": "A vevő nem található.",
+  "Purchase order not found": "A beszerzési rendelés nem található.",
+  "Purchase order line not found on this order": "A tétel nem tartozik ehhez a beszerzési rendeléshez.",
+  "Purchase order is not in draft status": "A beszerzési rendelés nincs piszkozat állapotban.",
+  "Purchase order is not submitted or partially received": "A rendelés nincs beküldve vagy részben átvéve állapotban.",
+  "Purchase order cannot be cancelled once receiving has started":
+    "A rendelés nem törölhető, miután az átvétel elkezdődött.",
+  "Customer order not found": "A vevői rendelés nem található.",
+  "Customer order line not found on this order": "A tétel nem tartozik ehhez a vevői rendeléshez.",
+  "Customer order is not in draft status": "A vevői rendelés nincs piszkozat állapotban.",
+  "Customer order cannot be cancelled once shipping has started":
+    "A rendelés nem törölhető, miután a szállítás elkezdődött.",
+  "Shipment not found": "A szállítmány nem található.",
+  "Order line does not belong to this shipment's customer order": "A tétel nem tartozik ehhez a rendeléshez.",
+  "Customer order is not confirmed or partially shipped": "A rendelés nincs visszaigazolva vagy részben szállítva állapotban.",
+  "Shipment is not pending": "A szállítmány nincs függőben állapotban.",
+  "Shipment is not in transit": "A szállítmány nincs szállítás alatt állapotban.",
+  "Shipment cannot be cancelled once delivered": "A kiszállított szállítmány nem törölhető.",
 };
 
 const INSUFFICIENT_STOCK = /^Insufficient stock: requested (\d+), available (\d+)$/;
+const OVER_RECEIPT = /^Cannot receive (\d+) units: only (\d+) remain on this order line$/;
+const OVER_SHIPMENT = /^Cannot ship (\d+) units: only (\d+) remain unshipped on this order line$/;
 
 function translate(detail: string): string {
   const exact = EXACT_TRANSLATIONS[detail];
@@ -33,6 +53,18 @@ function translate(detail: string): string {
   if (stockMatch) {
     const [, requested, available] = stockMatch;
     return `Nincs elég készlet: kért mennyiség ${requested}, elérhető ${available}.`;
+  }
+
+  const overReceiptMatch = detail.match(OVER_RECEIPT);
+  if (overReceiptMatch) {
+    const [, requested, remaining] = overReceiptMatch;
+    return `${requested} db nem vehető át: a tételből csak ${remaining} db van hátra.`;
+  }
+
+  const overShipmentMatch = detail.match(OVER_SHIPMENT);
+  if (overShipmentMatch) {
+    const [, requested, remaining] = overShipmentMatch;
+    return `${requested} db nem szállítható: a tételből csak ${remaining} db van hátra.`;
   }
 
   return detail;

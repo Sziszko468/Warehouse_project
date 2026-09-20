@@ -15,16 +15,16 @@ def get_by_name(db: Session, name: str) -> Warehouse | None:
     return db.scalar(select(Warehouse).where(Warehouse.name == name))
 
 
-def create(db: Session, payload: WarehouseCreate) -> Warehouse:
-    return common.create(db, Warehouse, payload)
+def create(db: Session, payload: WarehouseCreate, *, performed_by_id: int) -> Warehouse:
+    return common.create(db, Warehouse, payload, performed_by_id=performed_by_id)
 
 
-def update(db: Session, warehouse: Warehouse, payload: WarehouseUpdate) -> Warehouse:
-    return common.update(db, warehouse, payload)
+def update(db: Session, warehouse: Warehouse, payload: WarehouseUpdate, *, performed_by_id: int) -> Warehouse:
+    return common.update(db, warehouse, payload, performed_by_id=performed_by_id)
 
 
-def soft_delete(db: Session, warehouse: Warehouse) -> None:
-    common.soft_delete(db, warehouse)
+def soft_delete(db: Session, warehouse: Warehouse, *, performed_by_id: int) -> None:
+    common.soft_delete(db, warehouse, performed_by_id=performed_by_id)
 
 
 def list_warehouses(

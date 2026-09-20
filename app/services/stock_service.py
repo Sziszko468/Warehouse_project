@@ -24,15 +24,17 @@ def _require_warehouse(db: Session, warehouse_id: int) -> None:
         raise NotFoundError(Messages.WAREHOUSE_NOT_FOUND)
 
 
-def _get_stock_locked(db: Session, product_id: int, warehouse_id: int) -> Stock | None:
-    """Row-locks the (product, warehouse) stock row for the rest of this transaction, if it exists."""
+def get_stock_locked(db: Session, product_id: int, warehouse_id: int) -> Stock | None:
+    """Row-locks the (product, warehouse) stock row for the rest of this transaction, if it
+    exists. Public - also used by customer_order_service/shipment_service to lock stock for
+    reservation bookkeeping alongside their own stock_in/stock_out calls."""
     return db.scalar(
         select(Stock).where(Stock.product_id == product_id, Stock.warehouse_id == warehouse_id).with_for_update()
     )
 
 
-def _get_or_create_stock_locked(db: Session, product_id: int, warehouse_id: int) -> Stock:
-    stock = _get_stock_locked(db, product_id, warehouse_id)
+def get_or_create_stock_locked(db: Session, product_id: int, warehouse_id: int) -> Stock:
+    stock = get_stock_locked(db, product_id, warehouse_id)
     if stock is not None:
         return stock
     # SAVEPOINT: if a concurrent request wins the race to create this same row first, only
@@ -43,7 +45,7 @@ def _get_or_create_stock_locked(db: Session, product_id: int, warehouse_id: int)
             db.add(stock)
             db.flush()
     except IntegrityError:
-        stock = _get_stock_locked(db, product_id, warehouse_id)
+        stock = get_stock_locked(db, product_id, warehouse_id)
         assert stock is not None
     return stock
 
@@ -54,7 +56,7 @@ def stock_in(
     _require_product(db, product_id)
     _require_warehouse(db, warehouse_id)
 
-    stock = _get_or_create_stock_locked(db, product_id, warehouse_id)
+    stock = get_or_create_stock_locked(db, product_id, warehouse_id)
     stock.quantity += quantity
 
     movement = StockMovement(
@@ -77,8 +79,10 @@ def stock_out(
     _require_product(db, product_id)
     _require_warehouse(db, warehouse_id)
 
-    stock = _get_stock_locked(db, product_id, warehouse_id)
-    available = stock.quantity if stock is not None else 0
+    stock = get_stock_locked(db, product_id, warehouse_id)
+    # "available" excludes reserved_quantity - stock held by a confirmed customer order can't be
+    # taken by an unrelated manual stock/out, or the reservation would mean nothing.
+    available = (stock.quantity - stock.reserved_quantity) if stock is not None else 0
     if available < quantity:
         raise InsufficientStockError(Messages.insufficient_stock(quantity, available))
     stock.quantity -= quantity
@@ -119,14 +123,15 @@ def transfer(
     # product between the same two warehouses could each hold one lock and wait on the other.
     first_id, second_id = sorted([from_warehouse_id, to_warehouse_id])
     locked = {
-        first_id: _get_or_create_stock_locked(db, product_id, first_id),
-        second_id: _get_or_create_stock_locked(db, product_id, second_id),
+        first_id: get_or_create_stock_locked(db, product_id, first_id),
+        second_id: get_or_create_stock_locked(db, product_id, second_id),
     }
     from_stock = locked[from_warehouse_id]
     to_stock = locked[to_warehouse_id]
 
-    if from_stock.quantity < quantity:
-        raise InsufficientStockError(Messages.insufficient_stock(quantity, from_stock.quantity))
+    from_available = from_stock.quantity - from_stock.reserved_quantity
+    if from_available < quantity:
+        raise InsufficientStockError(Messages.insufficient_stock(quantity, from_available))
 
     from_stock.quantity -= quantity
     to_stock.quantity += quantity

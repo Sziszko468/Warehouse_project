@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.schemas.common import ProductBrief, WarehouseBrief
 
@@ -12,7 +12,13 @@ class StockRead(BaseModel):
     product: ProductBrief
     warehouse: WarehouseBrief
     quantity: int
+    reserved_quantity: int
     updated_at: datetime
+
+    @computed_field
+    @property
+    def available_quantity(self) -> int:
+        return self.quantity - self.reserved_quantity
 
 
 class LowStockRead(StockRead):

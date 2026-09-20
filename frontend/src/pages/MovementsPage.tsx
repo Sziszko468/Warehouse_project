@@ -5,11 +5,15 @@ import * as stockApi from "../api/stock";
 import * as warehousesApi from "../api/warehouses";
 import { PageHeader } from "../components/layout/PageHeader";
 import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
 import { DataTable, type Column } from "../components/ui/DataTable";
 import { Field } from "../components/ui/Field";
+import { DownloadIcon } from "../components/ui/icons";
 import { Pagination } from "../components/ui/Pagination";
 import { Panel } from "../components/ui/Panel";
+import { useToast } from "../context/ToastContext";
 import { t } from "../i18n/strings";
+import { getErrorMessage } from "../lib/errors";
 import { formatDateTime } from "../lib/format";
 import { movementTypeBadgeKind, movementTypeLabels } from "../lib/movementLabels";
 import type { MovementType, StockMovement } from "../types";
@@ -17,6 +21,7 @@ import type { MovementType, StockMovement } from "../types";
 const LIMIT = 25;
 
 export function MovementsPage() {
+  const { showError } = useToast();
   const [offset, setOffset] = useState(0);
   const [productFilter, setProductFilter] = useState<number | "">("");
   const [warehouseFilter, setWarehouseFilter] = useState<number | "">("");
@@ -64,7 +69,27 @@ export function MovementsPage() {
 
   return (
     <>
-      <PageHeader title="Mozgási napló" subtitle="A készletmozgások teljes, megváltoztathatatlan előzménye." />
+      <PageHeader
+        title="Mozgási napló"
+        subtitle="A készletmozgások teljes, megváltoztathatatlan előzménye."
+        actions={
+          <Button
+            variant="ghost"
+            onClick={() =>
+              stockApi
+                .exportMovements({
+                  product_id: productFilter || undefined,
+                  warehouse_id: warehouseFilter || undefined,
+                  movement_type: typeFilter || undefined,
+                })
+                .catch((err) => showError(getErrorMessage(err)))
+            }
+          >
+            <DownloadIcon />
+            CSV exportálás
+          </Button>
+        }
+      />
       <div className="page-content">
         <Panel>
           <div className="filters-bar">

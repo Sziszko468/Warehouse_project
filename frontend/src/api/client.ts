@@ -94,3 +94,40 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   return payload as T;
 }
+
+/**
+ * Downloads a file (e.g. a CSV export) and saves it via the browser - a plain `<a href>` can't
+ * attach the bearer token, so this fetches with the same auth header apiRequest uses, then
+ * triggers the save through a temporary object URL.
+ */
+export async function downloadFile(path: string, query?: RequestOptions["query"]): Promise<void> {
+  const headers: Record<string, string> = {};
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+
+  const response = await fetch(`${API_URL}${path}${buildQuery(query)}`, { headers });
+  if (!response.ok) {
+    if (response.status === 401) onUnauthorized?.();
+    const text = await response.text();
+    let payload: unknown = null;
+    try {
+      payload = text ? JSON.parse(text) : null;
+    } catch {
+      payload = text;
+    }
+    throw new ApiError(response.status, extractDetail(payload) ?? `Hiba történt (${response.status}).`);
+  }
+
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const filenameMatch = /filename="?([^"]+)"?/.exec(disposition);
+  const filename = filenameMatch?.[1] ?? "export.csv";
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}

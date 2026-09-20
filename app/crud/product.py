@@ -15,16 +15,16 @@ def get_by_sku(db: Session, sku: str) -> Product | None:
     return db.scalar(select(Product).where(Product.sku == sku))
 
 
-def create(db: Session, payload: ProductCreate) -> Product:
-    return common.create(db, Product, payload)
+def create(db: Session, payload: ProductCreate, *, performed_by_id: int) -> Product:
+    return common.create(db, Product, payload, performed_by_id=performed_by_id)
 
 
-def update(db: Session, product: Product, payload: ProductUpdate) -> Product:
-    return common.update(db, product, payload)
+def update(db: Session, product: Product, payload: ProductUpdate, *, performed_by_id: int) -> Product:
+    return common.update(db, product, payload, performed_by_id=performed_by_id)
 
 
-def soft_delete(db: Session, product: Product) -> None:
-    common.soft_delete(db, product)
+def soft_delete(db: Session, product: Product, *, performed_by_id: int) -> None:
+    common.soft_delete(db, product, performed_by_id=performed_by_id)
 
 
 def list_products(

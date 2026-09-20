@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,6 +14,16 @@ class Settings(BaseSettings):
     # comma-separated in .env (e.g. "http://localhost:5173,http://localhost:3000") rather than a
     # list field, since pydantic-settings otherwise expects list-typed env vars to be JSON.
     cors_origins: str = "http://localhost:5173"
+
+    # "log" (default) just logs would-be emails - safe for local dev/tests, never touches a real
+    # mail server. Switch to "smtp" (and fill in the smtp_* fields) to actually send mail.
+    email_backend: Literal["log", "smtp"] = "log"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_use_tls: bool = True
+    smtp_from_email: str = "noreply@stockflow.local"
 
     @property
     def cors_origins_list(self) -> list[str]:

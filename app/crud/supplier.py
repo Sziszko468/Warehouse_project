@@ -11,16 +11,16 @@ def get(db: Session, supplier_id: int) -> Supplier | None:
     return db.get(Supplier, supplier_id)
 
 
-def create(db: Session, payload: SupplierCreate) -> Supplier:
-    return common.create(db, Supplier, payload)
+def create(db: Session, payload: SupplierCreate, *, performed_by_id: int) -> Supplier:
+    return common.create(db, Supplier, payload, performed_by_id=performed_by_id)
 
 
-def update(db: Session, supplier: Supplier, payload: SupplierUpdate) -> Supplier:
-    return common.update(db, supplier, payload)
+def update(db: Session, supplier: Supplier, payload: SupplierUpdate, *, performed_by_id: int) -> Supplier:
+    return common.update(db, supplier, payload, performed_by_id=performed_by_id)
 
 
-def soft_delete(db: Session, supplier: Supplier) -> None:
-    common.soft_delete(db, supplier)
+def soft_delete(db: Session, supplier: Supplier, *, performed_by_id: int) -> None:
+    common.soft_delete(db, supplier, performed_by_id=performed_by_id)
 
 
 def list_suppliers(

@@ -9,18 +9,53 @@ from app.crud import user as crud_user
 from app.database import SessionLocal
 from app.exceptions import register_exception_handlers
 from app.models.user import UserRole
-from app.routers import auth, categories, products, stock, suppliers, users, warehouses
+from app.routers import (
+    audit_logs,
+    auth,
+    categories,
+    customer_orders,
+    customers,
+    products,
+    purchase_orders,
+    reports,
+    shipments,
+    stock,
+    suppliers,
+    users,
+    warehouses,
+)
 
 tags_metadata = [
     {"name": "auth", "description": "Registration, login, and the current user."},
     {"name": "users", "description": "Admin-only user management."},
     {"name": "categories", "description": "Product categories."},
     {"name": "suppliers", "description": "Suppliers."},
+    {"name": "customers", "description": "Customers."},
     {"name": "products", "description": "Products."},
     {"name": "warehouses", "description": "Warehouses."},
     {
         "name": "stock",
         "description": "Stock levels, low-stock alerts, movement history, and stock in/out/transfer operations.",
+    },
+    {
+        "name": "purchase-orders",
+        "description": "Orders placed with suppliers to restock a warehouse.",
+    },
+    {
+        "name": "customer-orders",
+        "description": "Orders placed by customers, fulfilled from a warehouse.",
+    },
+    {
+        "name": "shipments",
+        "description": "Physical shipments fulfilling customer orders.",
+    },
+    {
+        "name": "audit-logs",
+        "description": "Admin-only write-audit trail across master data and orders/shipments.",
+    },
+    {
+        "name": "reports",
+        "description": "Read-only aggregate reports: stock valuation, purchase and sales/fulfillment activity.",
     },
     {"name": "ops", "description": "Operational endpoints."},
 ]
@@ -68,9 +103,15 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(categories.router)
 app.include_router(suppliers.router)
+app.include_router(customers.router)
 app.include_router(products.router)
 app.include_router(warehouses.router)
 app.include_router(stock.router)
+app.include_router(purchase_orders.router)
+app.include_router(customer_orders.router)
+app.include_router(shipments.router)
+app.include_router(audit_logs.router)
+app.include_router(reports.router)
 
 
 @app.get("/health", tags=["ops"])

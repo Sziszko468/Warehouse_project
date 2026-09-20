@@ -118,6 +118,11 @@ def supplier_id(client, admin_headers) -> int:
 
 
 @pytest.fixture
+def customer_id(client, admin_headers) -> int:
+    return client.post("/customers", json={"name": "Contoso Ltd"}, headers=admin_headers).json()["id"]
+
+
+@pytest.fixture
 def warehouse_a_id(client, admin_headers) -> int:
     return client.post("/warehouses", json={"name": "Warehouse A"}, headers=admin_headers).json()["id"]
 

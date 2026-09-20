@@ -36,16 +36,19 @@ def get_warehouse(
 
 @router.post("", response_model=WarehouseRead, status_code=status.HTTP_201_CREATED)
 def create_warehouse(
-    payload: WarehouseCreate, db: Session = Depends(get_db), _: User = Depends(require_admin)
+    payload: WarehouseCreate, db: Session = Depends(get_db), current_user: User = Depends(require_admin)
 ) -> Warehouse:
     if crud_warehouse.get_by_name(db, payload.name) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=Messages.WAREHOUSE_NAME_EXISTS)
-    return crud_warehouse.create(db, payload)
+    return crud_warehouse.create(db, payload, performed_by_id=current_user.id)
 
 
 @router.patch("/{warehouse_id}", response_model=WarehouseRead)
 def update_warehouse(
-    warehouse_id: int, payload: WarehouseUpdate, db: Session = Depends(get_db), _: User = Depends(require_admin)
+    warehouse_id: int,
+    payload: WarehouseUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ) -> Warehouse:
     warehouse = get_or_404(crud_warehouse.get, db, warehouse_id, Messages.WAREHOUSE_NOT_FOUND)
     if (
@@ -54,10 +57,12 @@ def update_warehouse(
         and crud_warehouse.get_by_name(db, payload.name) is not None
     ):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=Messages.WAREHOUSE_NAME_EXISTS)
-    return crud_warehouse.update(db, warehouse, payload)
+    return crud_warehouse.update(db, warehouse, payload, performed_by_id=current_user.id)
 
 
 @router.delete("/{warehouse_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_warehouse(warehouse_id: int, db: Session = Depends(get_db), _: User = Depends(require_admin)) -> None:
+def delete_warehouse(
+    warehouse_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_admin)
+) -> None:
     warehouse = get_or_404(crud_warehouse.get, db, warehouse_id, Messages.WAREHOUSE_NOT_FOUND)
-    crud_warehouse.soft_delete(db, warehouse)
+    crud_warehouse.soft_delete(db, warehouse, performed_by_id=current_user.id)

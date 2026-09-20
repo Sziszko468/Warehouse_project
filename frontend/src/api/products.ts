@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiRequest, downloadFile } from "./client";
 import type { Page, Product } from "../types";
 
 export interface ProductListParams {
@@ -34,4 +34,8 @@ export function updateProduct(id: number, input: Partial<ProductInput> & { is_ac
 
 export function deleteProduct(id: number): Promise<void> {
   return apiRequest<void>(`/products/${id}`, { method: "DELETE" });
+}
+
+export function exportProducts(params: ProductListParams = {}): Promise<void> {
+  return downloadFile("/products/export", { ...params });
 }

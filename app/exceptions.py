@@ -15,6 +15,14 @@ class InvalidStockOperationError(Exception):
         self.message = message
 
 
+class InvalidOrderStateError(Exception):
+    """Raised when an order/shipment lifecycle action (submit, confirm, receive, ship, cancel...)
+    is attempted from a status that doesn't allow it."""
+
+    def __init__(self, message: str):
+        self.message = message
+
+
 class NotFoundError(Exception):
     def __init__(self, message: str = Messages.RESOURCE_NOT_FOUND):
         self.message = message
@@ -32,6 +40,10 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(InvalidStockOperationError)
     async def handle_invalid_stock_operation(request: Request, exc: InvalidStockOperationError) -> JSONResponse:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": exc.message})
+
+    @app.exception_handler(InvalidOrderStateError)
+    async def handle_invalid_order_state(request: Request, exc: InvalidOrderStateError) -> JSONResponse:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": exc.message})
 
     @app.exception_handler(NotFoundError)

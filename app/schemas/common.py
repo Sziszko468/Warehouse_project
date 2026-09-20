@@ -27,6 +27,27 @@ class WarehouseBrief(BaseModel):
     name: str
 
 
+class CategoryBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
+class SupplierBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
+class CustomerBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
 class UserBrief(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -20,6 +20,9 @@ class Messages:
     # suppliers
     SUPPLIER_NOT_FOUND = "Supplier not found"
 
+    # customers
+    CUSTOMER_NOT_FOUND = "Customer not found"
+
     # warehouses
     WAREHOUSE_NOT_FOUND = "Warehouse not found"
     WAREHOUSE_NAME_EXISTS = "Warehouse name already exists"
@@ -36,6 +39,30 @@ class Messages:
     SELF_TRANSFER_REJECTED = "Cannot transfer stock to the same warehouse"
     INSUFFICIENT_STOCK_DEFAULT = "Insufficient stock for this operation"
 
+    # purchase orders
+    PURCHASE_ORDER_NOT_FOUND = "Purchase order not found"
+    PURCHASE_ORDER_LINE_NOT_FOUND = "Purchase order line not found on this order"
+    PURCHASE_ORDER_NOT_DRAFT = "Purchase order is not in draft status"
+    PURCHASE_ORDER_NOT_RECEIVABLE = "Purchase order is not submitted or partially received"
+    PURCHASE_ORDER_CANNOT_CANCEL = "Purchase order cannot be cancelled once receiving has started"
+
+    # customer orders
+    CUSTOMER_ORDER_NOT_FOUND = "Customer order not found"
+    CUSTOMER_ORDER_LINE_NOT_FOUND = "Customer order line not found on this order"
+    CUSTOMER_ORDER_NOT_DRAFT = "Customer order is not in draft status"
+    CUSTOMER_ORDER_CANNOT_CANCEL = "Customer order cannot be cancelled once shipping has started"
+
+    # shipments
+    SHIPMENT_NOT_FOUND = "Shipment not found"
+    SHIPMENT_LINE_NOT_ON_ORDER = "Order line does not belong to this shipment's customer order"
+    SHIPMENT_ORDER_NOT_SHIPPABLE = "Customer order is not confirmed or partially shipped"
+    SHIPMENT_NOT_PENDING = "Shipment is not pending"
+    SHIPMENT_NOT_IN_TRANSIT = "Shipment is not in transit"
+    SHIPMENT_CANNOT_CANCEL = "Shipment cannot be cancelled once delivered"
+
+    # audit log
+    AUDIT_LOG_NOT_FOUND = "Audit log entry not found"
+
     # generic fallbacks (exception class defaults - callers normally pass a specific message above)
     RESOURCE_NOT_FOUND = "Resource not found"
     CONFLICTS_WITH_EXISTING_DATA = "Request conflicts with existing data"
@@ -43,3 +70,11 @@ class Messages:
     @staticmethod
     def insufficient_stock(requested: int, available: int) -> str:
         return f"Insufficient stock: requested {requested}, available {available}"
+
+    @staticmethod
+    def over_receipt(requested: int, remaining: int) -> str:
+        return f"Cannot receive {requested} units: only {remaining} remain on this order line"
+
+    @staticmethod
+    def over_shipment(requested: int, remaining: int) -> str:
+        return f"Cannot ship {requested} units: only {remaining} remain unshipped on this order line"

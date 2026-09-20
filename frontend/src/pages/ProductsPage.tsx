@@ -9,7 +9,7 @@ import { Button } from "../components/ui/Button";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { DataTable, type Column } from "../components/ui/DataTable";
 import { Field } from "../components/ui/Field";
-import { EditIcon, PlusIcon, TrashIcon } from "../components/ui/icons";
+import { DownloadIcon, EditIcon, PlusIcon, TrashIcon } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
 import { Pagination } from "../components/ui/Pagination";
 import { Panel } from "../components/ui/Panel";
@@ -105,12 +105,25 @@ export function ProductsPage() {
         title="Termékek"
         subtitle="A raktárkészlet alapját képező termékek."
         actions={
-          isAdmin && (
-            <Button onClick={() => setEditing("new")}>
-              <PlusIcon />
-              {t.create}
+          <div style={{ display: "flex", gap: "0.7rem" }}>
+            <Button
+              variant="ghost"
+              onClick={() =>
+                productsApi
+                  .exportProducts({ search: search || undefined, category_id: categoryFilter || undefined, include_inactive: includeInactive })
+                  .catch((err) => showError(getErrorMessage(err)))
+              }
+            >
+              <DownloadIcon />
+              CSV exportálás
             </Button>
-          )
+            {isAdmin && (
+              <Button onClick={() => setEditing("new")}>
+                <PlusIcon />
+                {t.create}
+              </Button>
+            )}
+          </div>
         }
       />
       <div className="page-content">

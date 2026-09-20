@@ -51,6 +51,12 @@ def _supplier_payload(client, admin_headers, unique_value: str | None = None) ->
     return {"name": unique_value or _next("Supplier"), "contact_name": "Test Contact"}
 
 
+def _customer_payload(client, admin_headers, unique_value: str | None = None) -> dict:
+    # customers deliberately have no unique-name constraint, mirroring suppliers - unique_value is
+    # accepted for interface symmetry with the other specs but has no uniqueness meaning here.
+    return {"name": unique_value or _next("Customer"), "contact_name": "Test Contact"}
+
+
 def _warehouse_payload(client, admin_headers, unique_value: str | None = None) -> dict:
     return {"name": unique_value or _next("Warehouse"), "address": "1 Test St"}
 
@@ -92,6 +98,18 @@ SUPPLIER = ResourceSpec(
     duplicate_message=None,
 )
 
+CUSTOMER = ResourceSpec(
+    name="customer",
+    endpoint="/customers",
+    not_found_message=Messages.CUSTOMER_NOT_FOUND,
+    required_fields=["name"],
+    patch_field="phone",
+    patch_value="555-0100",
+    build_create_payload=_customer_payload,
+    unique_field=None,
+    duplicate_message=None,
+)
+
 WAREHOUSE = ResourceSpec(
     name="warehouse",
     endpoint="/warehouses",
@@ -116,7 +134,7 @@ PRODUCT = ResourceSpec(
     duplicate_message=Messages.SKU_ALREADY_EXISTS,
 )
 
-ALL_SPECS = [CATEGORY, SUPPLIER, WAREHOUSE, PRODUCT]
+ALL_SPECS = [CATEGORY, SUPPLIER, CUSTOMER, WAREHOUSE, PRODUCT]
 UNIQUE_NAME_SPECS = [spec for spec in ALL_SPECS if spec.supports_duplicate_conflict]
 
 

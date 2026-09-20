@@ -213,6 +213,60 @@ export function ChevronDownIcon(props: IconProps) {
   );
 }
 
+export function ClipboardIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M8 4.5h8a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V5.5a1 1 0 0 1 1-1z" />
+      <path d="M9.5 3.5h5a.5.5 0 0 1 .5.5v1.5h-6V4a.5.5 0 0 1 .5-.5z" />
+      <path d="M9 10h6M9 13h6M9 16h4" />
+    </svg>
+  );
+}
+
+export function CartIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 4h2l2.2 11.2a1.5 1.5 0 0 0 1.5 1.3h7.6a1.5 1.5 0 0 0 1.5-1.2L20 8H6" />
+      <circle cx="10" cy="20" r="1.2" />
+      <circle cx="17" cy="20" r="1.2" />
+    </svg>
+  );
+}
+
+export function ShipmentIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 7.5h10v8H4z" />
+      <path d="M14 11h3l3 3v1.5h-2" />
+      <circle cx="7.5" cy="16.7" r="1.5" />
+      <circle cx="17" cy="16.7" r="1.5" />
+      <path d="M1 8.5h1M1 11h1.5M1 13.5h2" />
+    </svg>
+  );
+}
+
+export function ChartIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 20V4" />
+      <path d="M4 20h16" />
+      <path d="M8 20v-7" />
+      <path d="M13 20V9" />
+      <path d="M18 20v-4" />
+    </svg>
+  );
+}
+
+export function DownloadIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3.5v11" />
+      <path d="M7.5 10.5 12 15l4.5-4.5" />
+      <path d="M4.5 17.5v2a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-2" />
+    </svg>
+  );
+}
+
 export function ArchiveIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
