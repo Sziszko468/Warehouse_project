@@ -1,11 +1,15 @@
 # StockFlow
 
-A classic warehouse management system REST API — products, categories, warehouses, suppliers,
-stock in/out/transfer with a full audit trail, and low-stock alerts.
+**Languages:** English (this file) · [Magyar](README.hu.md)
+
+A classic warehouse management system — products, categories, warehouses, suppliers, stock
+in/out/transfer with a full audit trail, and low-stock alerts. REST API backend with a Hungarian,
+steampunk-themed web frontend.
 
 - **FastAPI** + **SQLAlchemy 2.0** + **PostgreSQL** + **Alembic**
 - JWT auth with **Admin** / **Staff** roles
-- **Docker Compose** (Postgres + Adminer + the API)
+- **React 19** + **TypeScript** + **Vite** frontend (`frontend/`), Hungarian UI
+- **Docker Compose** (Postgres + Adminer + the API + the frontend)
 - **Swagger** / OpenAPI docs at `/docs`
 - **pytest** test suite (50 tests, SQLite in-memory, no Docker required to run)
 
@@ -16,13 +20,23 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts Postgres, runs the Alembic migrations, and boots the API on
-[http://localhost:8000](http://localhost:8000) (docs at `/docs`). On first boot the app creates
-an admin account from `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` in `.env` — log in with those
-to get started, no manual DB step needed.
+This starts Postgres, runs the Alembic migrations, boots the API on
+[http://localhost:8000](http://localhost:8000) (docs at `/docs`), and serves the frontend on
+[http://localhost:5173](http://localhost:5173). On first API boot the app creates an admin
+account from `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` in `.env` — log in with those (in the
+web UI or via `/docs`) to get started, no manual DB step needed.
 
-[Adminer](http://localhost:8080) (a DB browser) is also available — server `postgres`, and the
-credentials from `.env`.
+[Adminer](http://localhost:8080) (a DB browser) is also available. Log in with the values from
+`.env` (defaults shown below) — note the server is the Docker service name `postgres`, not
+`localhost`, since Adminer reaches it over the Docker network:
+
+| Field | Value |
+|---|---|
+| System | PostgreSQL |
+| Server | `postgres` |
+| Username | `stockflow` (`POSTGRES_USER`) |
+| Password | `stockflow` (`POSTGRES_PASSWORD`) |
+| Database | `stockflow` (`POSTGRES_DB`) |
 
 To load some electronics-wholesaler-flavored demo data (categories, suppliers, warehouses,
 products, and initial stock):
@@ -31,7 +45,16 @@ products, and initial stock):
 docker compose exec api uv run python -m app.seed
 ```
 
+Rebuild just the frontend after pulling changes (e.g. if `VITE_API_URL` needs to point somewhere
+other than `http://localhost:8000`, pass it as a build arg):
+
+```bash
+docker compose up --build frontend
+```
+
 ## Local development (without Docker)
+
+### Backend
 
 Requires [uv](https://docs.astral.sh/uv/) and a running Postgres (e.g. `docker compose up -d postgres`).
 
@@ -53,6 +76,19 @@ Lint:
 uv run ruff check .
 uv run ruff format .
 ```
+
+### Frontend
+
+Requires Node 22+. Point it at a running backend (Docker or local) via `frontend/.env`:
+
+```bash
+cd frontend
+cp .env.example .env               # VITE_API_URL, defaults to http://localhost:8000
+npm install
+npm run dev                        # http://localhost:5173, hot reload
+```
+
+`npm run build` produces a production build in `frontend/dist`; `npm run lint` runs oxlint.
 
 ## Roles
 
