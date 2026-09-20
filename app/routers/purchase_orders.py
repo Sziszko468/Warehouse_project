@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, Depends, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.celery_app import enqueue
 from app.crud import purchase_order as crud_purchase_order
 from app.database import get_db
 from app.dependencies import PaginationParams, get_current_user, require_admin
@@ -126,13 +127,12 @@ def update_purchase_order(
 @router.post("/{purchase_order_id}/submit", response_model=PurchaseOrderRead)
 def submit_purchase_order(
     purchase_order_id: int,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> PurchaseOrder:
     purchase_order = get_or_404(crud_purchase_order.get, db, purchase_order_id, Messages.PURCHASE_ORDER_NOT_FOUND)
     result = purchase_order_service.submit_purchase_order(db, purchase_order, performed_by_id=current_user.id)
-    background_tasks.add_task(
+    enqueue(
         email_service.notify_purchase_order_submitted,
         purchase_order_id=result.id,
         supplier_name=result.supplier.name,
@@ -152,7 +152,6 @@ def cancel_purchase_order(
 def receive_purchase_order(
     purchase_order_id: int,
     payload: PurchaseOrderReceiveRequest,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> PurchaseOrder:
@@ -161,7 +160,7 @@ def receive_purchase_order(
         db, purchase_order, lines=payload.lines, note=payload.note, performed_by_id=current_user.id
     )
     if result.status == PurchaseOrderStatus.RECEIVED:
-        background_tasks.add_task(
+        enqueue(
             email_service.notify_purchase_order_received,
             purchase_order_id=result.id,
             supplier_name=result.supplier.name,

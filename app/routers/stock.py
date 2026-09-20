@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, Depends, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.celery_app import enqueue
 from app.crud import stock as crud_stock
 from app.database import get_db
 from app.dependencies import PaginationParams, get_current_user
@@ -20,7 +21,7 @@ router = APIRouter(prefix="/stock", tags=["stock"])
 
 
 def _schedule_low_stock_check_if_crossed(
-    background_tasks: BackgroundTasks, db: Session, *, product_id: int, warehouse_id: int, quantity_before: int
+    db: Session, *, product_id: int, warehouse_id: int, quantity_before: int
 ) -> None:
     """Compares stock before/after a stock/out or transfer call and schedules a low-stock email
     only on the downward crossing (was above the threshold, now at-or-below it) - so repeated
@@ -33,7 +34,7 @@ def _schedule_low_stock_check_if_crossed(
     if quantity_after > threshold:
         return
     warehouse = db.get(Warehouse, warehouse_id)
-    background_tasks.add_task(
+    enqueue(
         email_service.notify_low_stock,
         product_name=product.name if product is not None else f"#{product_id}",
         warehouse_name=warehouse.name if warehouse is not None else f"#{warehouse_id}",
@@ -200,7 +201,6 @@ def stock_in(
 @router.post("/out", response_model=StockMovementRead, status_code=status.HTTP_201_CREATED)
 def stock_out(
     payload: StockOutCreate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> StockMovement:
@@ -214,7 +214,6 @@ def stock_out(
         performed_by_id=current_user.id,
     )
     _schedule_low_stock_check_if_crossed(
-        background_tasks,
         db,
         product_id=payload.product_id,
         warehouse_id=payload.warehouse_id,
@@ -226,7 +225,6 @@ def stock_out(
 @router.post("/transfer", response_model=StockMovementRead, status_code=status.HTTP_201_CREATED)
 def transfer(
     payload: StockTransferCreate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> StockMovement:
@@ -241,7 +239,6 @@ def transfer(
         performed_by_id=current_user.id,
     )
     _schedule_low_stock_check_if_crossed(
-        background_tasks,
         db,
         product_id=payload.product_id,
         warehouse_id=payload.from_warehouse_id,

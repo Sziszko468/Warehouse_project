@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, Depends, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.celery_app import enqueue
 from app.crud import customer_order as crud_customer_order
 from app.crud import shipment as crud_shipment
 from app.database import get_db
@@ -49,14 +50,13 @@ def get_shipment(shipment_id: int, db: Session = Depends(get_db), _: User = Depe
 @router.post("", response_model=ShipmentRead, status_code=status.HTTP_201_CREATED)
 def create_shipment(
     payload: ShipmentCreate,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Shipment:
     result = shipment_service.create_shipment(db, payload, created_by_id=current_user.id)
     order = crud_customer_order.get(db, result.customer_order_id)
     if order is not None and order.status == CustomerOrderStatus.SHIPPED:
-        background_tasks.add_task(
+        enqueue(
             email_service.notify_customer_order_shipped,
             customer_order_id=order.id,
             customer_name=order.customer.name,

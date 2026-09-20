@@ -8,10 +8,12 @@ magyar nyelvű, steampunk stílusú webes felülettel.
 
 - **FastAPI** + **SQLAlchemy 2.0** + **PostgreSQL** + **Alembic**
 - JWT alapú hitelesítés **Admin** / **Munkatárs** szerepkörökkel
+- **Celery** + **Redis** háttérfeladatokhoz (e-mail értesítések, napi ütemezett készletjelentés)
 - **React 19** + **TypeScript** + **Vite** frontend (`frontend/`), magyar nyelvű felület
-- **Docker Compose** (Postgres + Adminer + API + frontend)
+- **Docker Compose** (Postgres + Redis + Adminer + API + Celery worker/beat + frontend)
+- **GitHub Actions** CI (backend lint/tesztek, frontend lint/build) minden push/PR-nél
 - **Swagger** / OpenAPI dokumentáció a `/docs` címen
-- **pytest** tesztkészlet (50 teszt, SQLite memóriában, Docker nélkül futtatható)
+- **pytest** tesztkészlet (SQLite memóriában, Docker nélkül futtatható)
 
 ## Gyors indítás (Docker)
 
@@ -20,12 +22,14 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Ez elindítja a Postgres-t, lefuttatja az Alembic migrációkat, elindítja az API-t a
-[http://localhost:8000](http://localhost:8000) címen (dokumentáció: `/docs`), és kiszolgálja a
-frontendet a [http://localhost:5173](http://localhost:5173) címen. Az API első indításakor a
-rendszer létrehoz egy admin fiókot a `.env`-ben megadott `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD`
-alapján — ezzel tud belépni (a webes felületen vagy a `/docs`-on keresztül), manuális
-adatbázis-lépés nélkül.
+Ez elindítja a Postgres-t, a Redis-t, lefuttatja az Alembic migrációkat, elindítja az API-t a
+[http://localhost:8000](http://localhost:8000) címen (dokumentáció: `/docs`), elindítja a Celery
+workert és a beat ütemezőt (háttérfeladatok — lásd lent a
+[Háttérfeladatok](#háttérfeladatok) szakaszt), és kiszolgálja a frontendet a
+[http://localhost:5173](http://localhost:5173) címen. Az API első indításakor a rendszer létrehoz
+egy admin fiókot a `.env`-ben megadott `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` alapján —
+ezzel tud belépni (a webes felületen vagy a `/docs`-on keresztül), manuális adatbázis-lépés
+nélkül.
 
 Az [Adminer](http://localhost:8080) (adatbázis-böngésző) szintén elérhető. Belépéshez a
 `.env`-ben megadott adatokat használd (alapértelmezett értékek lent) — a szerver a Docker
@@ -66,7 +70,8 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload
 ```
 
-Tesztek futtatása (SQLite memóriában, Postgres nem szükséges):
+Tesztek futtatása (SQLite memóriában, Postgres/Redis nem szükséges — a Celery feladatok
+szinkronban, közvetlenül a folyamaton belül futnak a tesztek alatt):
 
 ```bash
 uv run pytest
@@ -116,6 +121,28 @@ egyidejű kérések ne tudják túllépni a rendelkezésre álló készletet; eg
 megkötés pedig biztonsági tartalékként szolgál. A `GET /stock/low-stock` azokat a
 `(termék, raktár)` sorokat listázza, amelyek elérték vagy alulmúlják az adott termék
 `min_stock_threshold` értékét.
+
+## Háttérfeladatok
+
+Az e-mail értesítések (beszerzési rendelés beküldve/beérkezve, egy vevői rendelés teljesen
+kiszállítva, alacsony készlet átlépése) és egy napi ütemezett készletértékelési jelentés (minden
+aktív admin számára elküldve, 06:00 UTC-kor) **Celery** feladatokként futnak egy **Redis**
+brókeren keresztül, nem pedig közvetlenül az API folyamaton belül — így egy átmeneti hiba esetén
+újrapróbálkoznak, és nem vesznek el, ha az API egy kérés közben újraindul. Docker Compose alatt
+ez a `redis`, `celery_worker` és `celery_beat` szolgáltatás, amelyeket a `docker compose up`
+automatikusan elindít.
+
+A worker/beat helyi (Docker nélküli) futtatása egy Dockerizált Redis ellen:
+
+```bash
+docker compose up -d redis
+uv run celery -A app.celery_app:celery_app worker --loglevel=info   # külön terminál
+uv run celery -A app.celery_app:celery_app beat --loglevel=info     # egy másik külön terminál
+```
+
+Ha a Redis nem elérhető, amikor egy kérés megpróbál egy feladatot beütemezni (pl. ha csak az API
+fut, a worker nélkül), a beütemezési hiba naplózásra kerül, és nem terjed tovább — soha nem
+hiúsítja meg a kiváltó kérést (lásd `app.celery_app.enqueue`).
 
 ## Ismert korlátozás
 

@@ -22,18 +22,53 @@ services:
     depends_on:
       - postgres
 
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api:
     build: .
     env_file: .env
     environment:
-      # overrides the .env value so the container reaches postgres by its service
-      # name rather than localhost (.env's DATABASE_URL is for running the app
+      # overrides the .env value so the container reaches postgres/redis by their service
+      # names rather than localhost (.env's DATABASE_URL is for running the app
       # directly on the host, e.g. `uv run uvicorn` or `alembic` during development)
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stockflow}:${POSTGRES_PASSWORD:-stockflow}@postgres:5432/${POSTGRES_DB:-stockflow}
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_worker:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stockflow}:${POSTGRES_PASSWORD:-stockflow}@postgres:5432/${POSTGRES_DB:-stockflow}
+      REDIS_URL: redis://redis:6379/0
+    command: celery -A app.celery_app:celery_app worker --loglevel=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_beat:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-stockflow}:${POSTGRES_PASSWORD:-stockflow}@postgres:5432/${POSTGRES_DB:-stockflow}
+      REDIS_URL: redis://redis:6379/0
+    command: celery -A app.celery_app:celery_app beat --loglevel=info
+    depends_on:
+      redis:
         condition: service_healthy
 
   frontend:

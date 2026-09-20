@@ -8,10 +8,12 @@ steampunk-themed web frontend.
 
 - **FastAPI** + **SQLAlchemy 2.0** + **PostgreSQL** + **Alembic**
 - JWT auth with **Admin** / **Staff** roles
+- **Celery** + **Redis** for background jobs (email notifications, a daily scheduled stock report)
 - **React 19** + **TypeScript** + **Vite** frontend (`frontend/`), Hungarian UI
-- **Docker Compose** (Postgres + Adminer + the API + the frontend)
+- **Docker Compose** (Postgres + Redis + Adminer + the API + Celery worker/beat + the frontend)
+- **GitHub Actions** CI (backend lint/tests, frontend lint/build) on every push/PR
 - **Swagger** / OpenAPI docs at `/docs`
-- **pytest** test suite (50 tests, SQLite in-memory, no Docker required to run)
+- **pytest** test suite (SQLite in-memory, no Docker required to run)
 
 ## Quickstart (Docker)
 
@@ -20,11 +22,12 @@ cp .env.example .env
 docker compose up --build
 ```
 
-This starts Postgres, runs the Alembic migrations, boots the API on
-[http://localhost:8000](http://localhost:8000) (docs at `/docs`), and serves the frontend on
-[http://localhost:5173](http://localhost:5173). On first API boot the app creates an admin
-account from `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` in `.env` — log in with those (in the
-web UI or via `/docs`) to get started, no manual DB step needed.
+This starts Postgres, Redis, runs the Alembic migrations, boots the API on
+[http://localhost:8000](http://localhost:8000) (docs at `/docs`), starts the Celery worker and
+beat scheduler (background jobs — see [Background jobs](#background-jobs) below), and serves the
+frontend on [http://localhost:5173](http://localhost:5173). On first API boot the app creates an
+admin account from `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` in `.env` — log in with those (in
+the web UI or via `/docs`) to get started, no manual DB step needed.
 
 [Adminer](http://localhost:8080) (a DB browser) is also available. Log in with the values from
 `.env` (defaults shown below) — note the server is the Docker service name `postgres`, not
@@ -64,7 +67,8 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload
 ```
 
-Run the test suite (SQLite in-memory, no Postgres needed):
+Run the test suite (SQLite in-memory, no Postgres/Redis needed — Celery tasks run synchronously
+in-process during tests):
 
 ```bash
 uv run pytest
@@ -107,6 +111,27 @@ Current stock is tracked per `(product, warehouse)` pair. Every `stock/in`, `sto
 UPDATE`) so concurrent requests can't overdraw the same stock; a `CHECK (quantity >= 0)`
 constraint is a hard backstop. `GET /stock/low-stock` lists `(product, warehouse)` rows at or
 below that product's `min_stock_threshold`.
+
+## Background jobs
+
+Email notifications (purchase order submitted/received, a customer order fully shipped, a
+low-stock crossing) and a daily stock-valuation report (emailed to all active admins, 06:00 UTC)
+run as **Celery** tasks against a **Redis** broker, rather than inline in the API process — so
+they're retried on a transient failure and don't get lost if the API restarts mid-request. Under
+Docker Compose this is the `redis`, `celery_worker`, and `celery_beat` services, started
+automatically by `docker compose up`.
+
+Running the worker/beat locally (outside Docker), against a Dockerized Redis:
+
+```bash
+docker compose up -d redis
+uv run celery -A app.celery_app:celery_app worker --loglevel=info   # separate terminal
+uv run celery -A app.celery_app:celery_app beat --loglevel=info     # another separate terminal
+```
+
+If Redis isn't reachable when a request tries to enqueue a job (e.g. running the API alone
+without the worker), the enqueue failure is logged and swallowed — it never breaks the request
+that triggered it (see `app.celery_app.enqueue`).
 
 ## Known limitation
 

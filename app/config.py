@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
     smtp_from_email: str = "noreply@stockflow.local"
 
+    # Broker for Celery background jobs (email notifications, scheduled stock reports).
+    redis_url: str = "redis://redis:6379/0"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

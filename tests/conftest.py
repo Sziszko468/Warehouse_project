@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.celery_app import celery_app
 from app.config import settings
 from app.database import get_db
 from app.main import app
@@ -11,6 +12,11 @@ from app.models import Base
 from app.models.user import User, UserRole
 from app.security import create_access_token, hash_password
 from tests.constants import SAMPLE_PASSWORD, SAMPLE_UNIT_PRICE
+
+# Run Celery tasks synchronously and in-process - no broker/worker needed in tests, and
+# `.delay()` calls execute immediately (propagating exceptions), matching how TestClient already
+# executes FastAPI BackgroundTasks synchronously within the request/response cycle.
+celery_app.conf.update(task_always_eager=True, task_eager_propagates=True)
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -94,6 +100,20 @@ def admin_headers(admin_user) -> dict[str, str]:
 def staff_headers(staff_user) -> dict[str, str]:
     token = create_access_token(staff_user.id)
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def scheduled_reports_session(monkeypatch):
+    # send_scheduled_stock_report runs outside any request and opens its own SessionLocal() -
+    # point that at the same in-memory test engine as db_session/app.main.SessionLocal, rather
+    # than the real app.database engine. Patched here (not imported from a test module) so it
+    # shares this exact TestingSessionLocal/engine pair rather than risking a second one - pytest
+    # loads this file as a bare "conftest" module (there's no tests/__init__.py), which is a
+    # different module identity than "tests.conftest", so `from tests.conftest import ...`
+    # elsewhere would bind to a second, empty in-memory database.
+    from app.services import scheduled_reports
+
+    monkeypatch.setattr(scheduled_reports, "SessionLocal", TestingSessionLocal)
 
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,10 @@
 import logging
 import smtplib
+from datetime import UTC, datetime
 from email.message import EmailMessage
 from typing import Protocol
 
+from app.celery_app import celery_app
 from app.config import settings
 from app.crud import user as crud_user
 from app.database import SessionLocal
@@ -67,6 +69,7 @@ def _send_best_effort(*, subject: str, body: str) -> None:
         logger.exception("Failed to send email: subject=%r", subject)
 
 
+@celery_app.task(name="app.services.email_service.notify_purchase_order_submitted")
 def notify_purchase_order_submitted(*, purchase_order_id: int, supplier_name: str) -> None:
     _send_best_effort(
         subject=f"PO-{purchase_order_id} submitted",
@@ -74,6 +77,7 @@ def notify_purchase_order_submitted(*, purchase_order_id: int, supplier_name: st
     )
 
 
+@celery_app.task(name="app.services.email_service.notify_purchase_order_received")
 def notify_purchase_order_received(*, purchase_order_id: int, supplier_name: str) -> None:
     _send_best_effort(
         subject=f"PO-{purchase_order_id} received in full",
@@ -81,6 +85,7 @@ def notify_purchase_order_received(*, purchase_order_id: int, supplier_name: str
     )
 
 
+@celery_app.task(name="app.services.email_service.notify_customer_order_shipped")
 def notify_customer_order_shipped(*, customer_order_id: int, customer_name: str) -> None:
     _send_best_effort(
         subject=f"CO-{customer_order_id} fully shipped",
@@ -88,6 +93,7 @@ def notify_customer_order_shipped(*, customer_order_id: int, customer_name: str)
     )
 
 
+@celery_app.task(name="app.services.email_service.notify_low_stock")
 def notify_low_stock(*, product_name: str, warehouse_name: str, quantity: int, threshold: int) -> None:
     _send_best_effort(
         subject=f"Low stock: {product_name} at {warehouse_name}",
@@ -96,3 +102,8 @@ def notify_low_stock(*, product_name: str, warehouse_name: str, quantity: int, t
             f"at or below the minimum threshold of {threshold}."
         ),
     )
+
+
+def notify_stock_report(*, report_text: str) -> None:
+    today = datetime.now(UTC).date()
+    _send_best_effort(subject=f"Scheduled stock report - {today}", body=report_text)
