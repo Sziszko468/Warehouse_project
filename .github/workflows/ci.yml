@@ -13,9 +13,11 @@ jobs:
       - uses: actions/checkout@v5
 
       # v4 talks to GitHub's old, retired Actions cache API - restoring a cache fails there with
-      # "Cache service responded with 400" and fails the whole job; v10 uses the current API.
+      # "Cache service responded with 400" and fails the whole job; v10.2.0 uses the current API.
+      # Pinned to the exact tag rather than a floating "v10" - astral-sh/setup-uv only publishes
+      # rolling major-version tags up through v7 (v8/v9/v10 exist as exact releases only).
       - name: Install uv
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
 
