@@ -11,6 +11,7 @@ from app.main import app
 from app.models import Base
 from app.models.user import User, UserRole
 from app.security import create_access_token, hash_password
+from app.services import email_service
 from tests.constants import SAMPLE_PASSWORD, SAMPLE_UNIT_PRICE
 
 # Run Celery tasks synchronously and in-process - no broker/worker needed in tests, and
@@ -40,6 +41,19 @@ def _fresh_schema():
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_admin_email_lookup(monkeypatch):
+    # Celery runs eager (see below), so a request that triggers a notification - even in a test
+    # that doesn't care about email at all - runs the notify_* task body for real, synchronously,
+    # inside the request. That calls _active_admin_emails(), which opens Settings.database_url for
+    # real. An empty admin list short-circuits every email backend harmlessly (SmtpEmailSender
+    # already no-ops on an empty `to`), so no test ever depends on DATABASE_URL actually being
+    # reachable. Tests that care about notification content (test_email_notifications.py,
+    # test_scheduled_reports.py) explicitly re-patch this via their own `recorder` fixture, which
+    # runs after this one and wins.
+    monkeypatch.setattr(email_service, "_active_admin_emails", lambda: [])
 
 
 @pytest.fixture

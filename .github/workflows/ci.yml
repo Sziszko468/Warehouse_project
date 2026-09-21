@@ -30,7 +30,21 @@ jobs:
       - name: Format check (ruff format)
         run: uv run ruff format --check .
 
+      # app.config.Settings() has no defaults for these, so just importing tests/conftest.py
+      # needs them set - the suite itself only ever talks to SQLite in-memory (Celery runs eager,
+      # never dialing Redis either), but a test that doesn't mock email can still make a real,
+      # un-mocked notification call that opens Settings.database_url for real (see
+      # email_service._active_admin_emails). "postgres"/"redis" (the Docker Compose hostnames
+      # from .env.example) don't exist on this bare runner, and a plain host string on Linux hangs
+      # for a long time re-trying DNS instead of failing fast - 127.0.0.1 with a closed port
+      # refuses the connection immediately, so any accidental real hit fails fast rather than
+      # stalling the job.
       - name: Run tests
+        env:
+          DATABASE_URL: postgresql+psycopg://test:test@127.0.0.1:1/test
+          SECRET_KEY: test-secret-key-not-used-in-ci-1234
+          FIRST_ADMIN_EMAIL: admin@example.com
+          FIRST_ADMIN_PASSWORD: test-password
         run: uv run pytest
 
   frontend:
