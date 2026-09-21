@@ -8,6 +8,7 @@ from app.celery_app import celery_app
 from app.config import settings
 from app.crud import user as crud_user
 from app.database import SessionLocal
+from app.messages import NotificationMessages
 from app.models.user import UserRole
 
 logger = logging.getLogger("app.email")
@@ -50,8 +51,8 @@ def get_email_sender() -> EmailSender:
 
 def _active_admin_emails() -> list[str]:
     # Opens its own short-lived session rather than reusing the triggering request's - these
-    # notifiers run as FastAPI BackgroundTasks, which execute after the request's own `db`
-    # (app.database.get_db) has already been closed.
+    # notifiers run as Celery tasks, in a separate worker process where the request's own `db`
+    # (app.database.get_db) was never available in the first place.
     db = SessionLocal()
     try:
         admins, _ = crud_user.list_users(db, role=UserRole.ADMIN, is_active=True, limit=1000)
@@ -71,39 +72,40 @@ def _send_best_effort(*, subject: str, body: str) -> None:
 
 @celery_app.task(name="app.services.email_service.notify_purchase_order_submitted")
 def notify_purchase_order_submitted(*, purchase_order_id: int, supplier_name: str) -> None:
-    _send_best_effort(
-        subject=f"PO-{purchase_order_id} submitted",
-        body=f"Purchase order PO-{purchase_order_id} to {supplier_name} has been submitted.",
+    subject, body = NotificationMessages.purchase_order_submitted(
+        purchase_order_id=purchase_order_id, supplier_name=supplier_name
     )
+    _send_best_effort(subject=subject, body=body)
 
 
 @celery_app.task(name="app.services.email_service.notify_purchase_order_received")
 def notify_purchase_order_received(*, purchase_order_id: int, supplier_name: str) -> None:
-    _send_best_effort(
-        subject=f"PO-{purchase_order_id} received in full",
-        body=f"Purchase order PO-{purchase_order_id} from {supplier_name} has been fully received.",
+    subject, body = NotificationMessages.purchase_order_received(
+        purchase_order_id=purchase_order_id, supplier_name=supplier_name
     )
+    _send_best_effort(subject=subject, body=body)
 
 
 @celery_app.task(name="app.services.email_service.notify_customer_order_shipped")
 def notify_customer_order_shipped(*, customer_order_id: int, customer_name: str) -> None:
-    _send_best_effort(
-        subject=f"CO-{customer_order_id} fully shipped",
-        body=f"Customer order CO-{customer_order_id} for {customer_name} has been fully shipped.",
+    subject, body = NotificationMessages.customer_order_shipped(
+        customer_order_id=customer_order_id, customer_name=customer_name
     )
+    _send_best_effort(subject=subject, body=body)
 
 
 @celery_app.task(name="app.services.email_service.notify_low_stock")
 def notify_low_stock(*, product_name: str, warehouse_name: str, quantity: int, threshold: int) -> None:
-    _send_best_effort(
-        subject=f"Low stock: {product_name} at {warehouse_name}",
-        body=(
-            f"{product_name} at {warehouse_name} has dropped to {quantity} units, "
-            f"at or below the minimum threshold of {threshold}."
-        ),
+    subject, body = NotificationMessages.low_stock(
+        product_name=product_name, warehouse_name=warehouse_name, quantity=quantity, threshold=threshold
     )
+    _send_best_effort(subject=subject, body=body)
 
 
 def notify_stock_report(*, report_text: str) -> None:
+    # Not a @celery_app.task itself, unlike the notify_* functions above - it's only ever called
+    # in-process from inside app.services.scheduled_reports.send_scheduled_stock_report, which is
+    # already the task doing the async dispatch. Wrapping it as a task too would double-enqueue.
     today = datetime.now(UTC).date()
-    _send_best_effort(subject=f"Scheduled stock report - {today}", body=report_text)
+    subject = NotificationMessages.stock_report(report_date=str(today))
+    _send_best_effort(subject=subject, body=report_text)

@@ -78,3 +78,43 @@ class Messages:
     @staticmethod
     def over_shipment(requested: int, remaining: int) -> str:
         return f"Cannot ship {requested} units: only {remaining} remain unshipped on this order line"
+
+
+class NotificationMessages:
+    """Every Celery background-job notification's subject/body, centralized in one place - same
+    reasoning as Messages above: keeps templates from drifting across call sites, and keeps
+    swapping to a different language a one-file change.
+    """
+
+    @staticmethod
+    def purchase_order_submitted(*, purchase_order_id: int, supplier_name: str) -> tuple[str, str]:
+        return (
+            f"PO-{purchase_order_id} submitted",
+            f"Purchase order PO-{purchase_order_id} to {supplier_name} has been submitted.",
+        )
+
+    @staticmethod
+    def purchase_order_received(*, purchase_order_id: int, supplier_name: str) -> tuple[str, str]:
+        return (
+            f"PO-{purchase_order_id} received in full",
+            f"Purchase order PO-{purchase_order_id} from {supplier_name} has been fully received.",
+        )
+
+    @staticmethod
+    def customer_order_shipped(*, customer_order_id: int, customer_name: str) -> tuple[str, str]:
+        return (
+            f"CO-{customer_order_id} fully shipped",
+            f"Customer order CO-{customer_order_id} for {customer_name} has been fully shipped.",
+        )
+
+    @staticmethod
+    def low_stock(*, product_name: str, warehouse_name: str, quantity: int, threshold: int) -> tuple[str, str]:
+        return (
+            f"Low stock: {product_name} at {warehouse_name}",
+            f"{product_name} at {warehouse_name} has dropped to {quantity} units, "
+            f"at or below the minimum threshold of {threshold}.",
+        )
+
+    @staticmethod
+    def stock_report(*, report_date: str) -> str:
+        return f"Scheduled stock report - {report_date}"

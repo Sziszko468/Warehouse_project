@@ -3,6 +3,12 @@ from app.crud import report as crud_report
 from app.database import SessionLocal
 from app.services import email_service
 
+# Retry policy for a transient failure (e.g. a DB hiccup) building the report - without this, an
+# exception here has no operator-visible alert and no other re-attempt until tomorrow's schedule.
+REPORT_TASK_MAX_RETRIES = 3
+REPORT_TASK_RETRY_BACKOFF_SECONDS = 60
+REPORT_TASK_RETRY_BACKOFF_MAX_SECONDS = 600
+
 
 def _format_stock_valuation(report: dict) -> str:
     lines = [
@@ -20,7 +26,13 @@ def _format_stock_valuation(report: dict) -> str:
     return "\n".join(lines)
 
 
-@celery_app.task(name="app.services.scheduled_reports.send_scheduled_stock_report")
+@celery_app.task(
+    name="app.services.scheduled_reports.send_scheduled_stock_report",
+    autoretry_for=(Exception,),
+    retry_backoff=REPORT_TASK_RETRY_BACKOFF_SECONDS,
+    retry_backoff_max=REPORT_TASK_RETRY_BACKOFF_MAX_SECONDS,
+    max_retries=REPORT_TASK_MAX_RETRIES,
+)
 def send_scheduled_stock_report() -> None:
     # Runs outside any FastAPI request (triggered by Celery beat), so there's no Depends(get_db)
     # to use - opens its own short-lived session, same pattern as
