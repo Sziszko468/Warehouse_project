@@ -15,7 +15,7 @@ import { DownloadIcon, PlusIcon, TrashIcon } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
 import { Pagination } from "../components/ui/Pagination";
 import { Panel } from "../components/ui/Panel";
-import { useToast } from "../context/ToastContext";
+import { useToast } from "../context/useToast";
 import { t } from "../i18n/strings";
 import { getErrorMessage } from "../lib/errors";
 import { formatAmount, formatDateTime } from "../lib/format";

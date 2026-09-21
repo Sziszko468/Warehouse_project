@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import {

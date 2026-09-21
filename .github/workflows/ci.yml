@@ -10,10 +10,12 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
+      # v4 talks to GitHub's old, retired Actions cache API - restoring a cache fails there with
+      # "Cache service responded with 400" and fails the whole job; v10 uses the current API.
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
 
@@ -35,10 +37,10 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm

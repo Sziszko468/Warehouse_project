@@ -1,18 +1,12 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { AlertIcon, CheckIcon } from "../components/ui/icons";
+import { ToastContext } from "./ToastContext";
 
 interface Toast {
   id: number;
   kind: "success" | "error";
   message: string;
 }
-
-interface ToastContextValue {
-  showSuccess: (message: string) => void;
-  showError: (message: string) => void;
-}
-
-const ToastContext = createContext<ToastContextValue | null>(null);
 
 let idCounter = 0;
 
@@ -43,10 +37,4 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast(): ToastContextValue {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
-  return ctx;
 }

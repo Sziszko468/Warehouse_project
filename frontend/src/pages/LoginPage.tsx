@@ -4,7 +4,7 @@ import { Button } from "../components/ui/Button";
 import { Field } from "../components/ui/Field";
 import { AlertIcon, GearIcon } from "../components/ui/icons";
 import { Panel } from "../components/ui/Panel";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { getErrorMessage } from "../lib/errors";
 
 export function LoginPage() {

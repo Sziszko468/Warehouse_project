@@ -13,8 +13,8 @@ import { DownloadIcon, EditIcon, PlusIcon, TrashIcon } from "../components/ui/ic
 import { Modal } from "../components/ui/Modal";
 import { Pagination } from "../components/ui/Pagination";
 import { Panel } from "../components/ui/Panel";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
 import { t } from "../i18n/strings";
 import { getErrorMessage } from "../lib/errors";
 import { formatAmount } from "../lib/format";

@@ -21,7 +21,7 @@ import {
   WarehouseIcon,
 } from "../components/ui/icons";
 import { Panel } from "../components/ui/Panel";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { formatDateTime } from "../lib/format";
 import { movementTypeLabels } from "../lib/movementLabels";
 import type { AuditLog } from "../types";

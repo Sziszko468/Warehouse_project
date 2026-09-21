@@ -11,7 +11,7 @@ import { Field } from "../components/ui/Field";
 import { DownloadIcon } from "../components/ui/icons";
 import { Pagination } from "../components/ui/Pagination";
 import { Panel } from "../components/ui/Panel";
-import { useToast } from "../context/ToastContext";
+import { useToast } from "../context/useToast";
 import { t } from "../i18n/strings";
 import { getErrorMessage } from "../lib/errors";
 import { formatDateTime } from "../lib/format";
