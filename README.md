@@ -23,7 +23,7 @@ docker compose up --build
 ```
 
 This starts Postgres, Redis, runs the Alembic migrations, boots the API on
-[http://localhost:8000](http://localhost:8000) (docs at `/docs`), starts the Celery worker and
+[http://localhost:8001](http://localhost:8001) (docs at `/docs`), starts the Celery worker and
 beat scheduler (background jobs — see [Background jobs](#background-jobs) below), and serves the
 frontend on [http://localhost:5173](http://localhost:5173). On first API boot the app creates an
 admin account from `FIRST_ADMIN_EMAIL` / `FIRST_ADMIN_PASSWORD` in `.env` — log in with those (in
@@ -49,7 +49,7 @@ docker compose exec api uv run python -m app.seed
 ```
 
 Rebuild just the frontend after pulling changes (e.g. if `VITE_API_URL` needs to point somewhere
-other than `http://localhost:8000`, pass it as a build arg):
+other than `http://localhost:8001`, pass it as a build arg):
 
 ```bash
 docker compose up --build frontend

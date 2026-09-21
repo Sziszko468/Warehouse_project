@@ -23,7 +23,7 @@ docker compose up --build
 ```
 
 Ez elindítja a Postgres-t, a Redis-t, lefuttatja az Alembic migrációkat, elindítja az API-t a
-[http://localhost:8000](http://localhost:8000) címen (dokumentáció: `/docs`), elindítja a Celery
+[http://localhost:8001](http://localhost:8001) címen (dokumentáció: `/docs`), elindítja a Celery
 workert és a beat ütemezőt (háttérfeladatok — lásd lent a
 [Háttérfeladatok](#háttérfeladatok) szakaszt), és kiszolgálja a frontendet a
 [http://localhost:5173](http://localhost:5173) címen. Az API első indításakor a rendszer létrehoz
@@ -52,7 +52,7 @@ docker compose exec api uv run python -m app.seed
 ```
 
 A frontend újraépítése frissítés után (pl. ha a `VITE_API_URL`-nak máshova kell mutatnia, mint a
-`http://localhost:8000`, adja meg build argumentumként):
+`http://localhost:8001`, adja meg build argumentumként):
 
 ```bash
 docker compose up --build frontend

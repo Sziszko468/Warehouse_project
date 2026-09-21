@@ -16,7 +16,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stockflow}
       POSTGRES_DB: ${POSTGRES_DB:-stockflow}
     ports:
-      - "5432:5432"
+      # host:container - 5432 is often already taken by another local Postgres, so the published
+      # side is 5434; every service in this file reaches it over the network as postgres:5432
+      # (unaffected - see the DATABASE_URL override above), only a host-side tool (psql, a local
+      # `uv run alembic`/`uvicorn`) needs this published port.
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -55,7 +59,10 @@ services:
   api:
     <<: *app
     ports:
-      - "8000:8000"
+      # host:container - 8000 is often already taken by something else on the host, so the
+      # published side is 8001; the container's own port (and everything inside the network,
+      # e.g. celery_worker/celery_beat/frontend reaching it) is unaffected and stays 8000.
+      - "8001:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -93,8 +100,9 @@ services:
       context: ./frontend
       args:
         # the browser loads this, so it must be a URL reachable from the host,
-        # not the "api" in-network service name (see frontend/Dockerfile)
-        VITE_API_URL: http://localhost:8000
+        # not the "api" in-network service name (see frontend/Dockerfile) - matches api's
+        # published host port above, not its in-container port.
+        VITE_API_URL: http://localhost:8001
     ports:
       - "5173:80"
     depends_on:
